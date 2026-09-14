@@ -4,6 +4,7 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 import { useCart } from "../../context/CartContext";
 import ProductQuickView from "../../components/ProductQuickView";
 
@@ -24,10 +25,10 @@ const Product = () => {
     const fetchCatalog = async () => {
       try {
         const [productsResponse, categoriesResponse] = await Promise.all([
-          axios.get("http://localhost:5000/api/product/show", {
+          axios.get(`${API_BASE_URL}/api/product/show`, {
             timeout: 2000,
           }),
-          axios.get("http://localhost:5000/api/category/show", {
+          axios.get(`${API_BASE_URL}/api/category/show`, {
             timeout: 2000,
           }),
         ]);
@@ -66,13 +67,7 @@ const Product = () => {
             ]),
           ).values(),
         ];
-        const dashboardCategoryKeys = new Set(
-          uniqueCategories.map((category) => category.toLowerCase()),
-        );
-        const dashboardProducts = savedProducts.filter((product) =>
-          dashboardCategoryKeys.has(String(product.category || "").trim().toLowerCase()),
-        );
-        setProducts(dashboardProducts);
+        setProducts(savedProducts);
         setCategories(["All", ...uniqueCategories]);
       } catch (error) {
         console.error("Failed to load products", error);

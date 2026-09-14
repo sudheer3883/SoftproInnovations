@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 
-const ORDER_API = "http://localhost:5000/api/order";
+const ORDER_API = `${API_BASE_URL}/api/order`;
 const ORDER_STATUSES = ["Placed", "Processing", "Shipped", "Delivered"];
 const getAvailableStatuses = (currentStatus) =>
   currentStatus === "Cancelled" ? [currentStatus] : ORDER_STATUSES;

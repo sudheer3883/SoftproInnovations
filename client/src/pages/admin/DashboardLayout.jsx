@@ -8,6 +8,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import adminPhoto from "../../assets/photo.jpeg";
+import { API_BASE_URL } from "../../config/api";
 import "./Dashboard.css";
 
 const getAdminStorageValue = (key) =>
@@ -37,7 +38,7 @@ const DashboardLayout = () => {
     if (!adminId) return;
 
     axios
-      .get(`http://localhost:5000/api/admin/show/${adminId}`)
+      .get(`${API_BASE_URL}/api/admin/show/${adminId}`)
       .then(({ data }) => {
         if (!data?.name || !data?.email) return;
         setAdminProfile({ name: data.name, email: data.email });

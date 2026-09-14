@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../config/api";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -23,10 +24,7 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/admin/login",
-        data,
-      );
+      const res = await axios.post(`${API_BASE_URL}/api/admin/login`, data);
       if (res.data.msg === "Success") {
         const storage = rememberMe ? localStorage : sessionStorage;
         const otherStorage = rememberMe ? sessionStorage : localStorage;

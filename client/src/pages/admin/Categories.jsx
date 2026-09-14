@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import categoryCatalog from "../../data/categoryCatalog";
+import { API_BASE_URL } from "../../config/api";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -23,7 +24,7 @@ const Categories = () => {
     try {
       setLoading(true);
 
-      const res = await axios.get("http://localhost:5000/api/category/show");
+      const res = await axios.get(`${API_BASE_URL}/api/category/show`);
 
       const savedCategories = Array.isArray(res.data) ? res.data : [];
       const savedNames = new Set(
@@ -38,7 +39,7 @@ const Categories = () => {
       if (missingCategories.length > 0) {
         await Promise.all(
           missingCategories.map((category) =>
-            axios.post("http://localhost:5000/api/category/register", {
+            axios.post(`${API_BASE_URL}/api/category/register`, {
               category: category.name,
               image: category.image,
               description: category.description,
@@ -48,7 +49,7 @@ const Categories = () => {
         );
 
         const updatedResponse = await axios.get(
-          "http://localhost:5000/api/category/show",
+          `${API_BASE_URL}/api/category/show`,
         );
         setCategories(
           Array.isArray(updatedResponse.data) ? updatedResponse.data : [],
@@ -100,7 +101,7 @@ const Categories = () => {
 
     try {
       const res = await axios.delete(
-        `http://localhost:5000/api/category/delete/${id}`,
+        `${API_BASE_URL}/api/category/delete/${id}`,
       );
 
       showAlert(

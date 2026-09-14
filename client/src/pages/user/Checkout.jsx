@@ -4,6 +4,7 @@ import axios from "axios";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useCart } from "../../context/CartContext";
+import { API_BASE_URL } from "../../config/api";
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString("en-IN")}`;
 
@@ -143,7 +144,7 @@ const Checkout = () => {
 
       try {
         await axios.post(
-          "http://localhost:5000/api/order/create",
+          `${API_BASE_URL}/api/order/create`,
           {
             ...orderData,
             paymentStatus: "Pending",
@@ -190,7 +191,7 @@ const Checkout = () => {
       // 1. Pre-create order record in backend
       try {
         await axios.post(
-          "http://localhost:5000/api/order/create",
+          `${API_BASE_URL}/api/order/create`,
           {
             ...orderData,
             paymentStatus: "Pending",
@@ -203,7 +204,7 @@ const Checkout = () => {
 
       // 2. Request Razorpay order ID from backend
       const rzpOrderRes = await axios.post(
-        "http://localhost:5000/api/payment/razorpay/create-order",
+        `${API_BASE_URL}/api/payment/razorpay/create-order`,
         {
           amount: total,
           orderId,
@@ -227,7 +228,7 @@ const Checkout = () => {
 
       // 3. Configure Razorpay modal options
       const options = {
-        key: keyId || "rzp_test_TaJ5kBtEk4rgMi",
+        key: keyId,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency || "INR",
         name: "Softpro Innovation",
@@ -260,7 +261,7 @@ const Checkout = () => {
             );
 
             const verifyRes = await axios.post(
-              "http://localhost:5000/api/payment/razorpay/verify",
+              `${API_BASE_URL}/api/payment/razorpay/verify`,
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

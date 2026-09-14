@@ -2,6 +2,7 @@ import { useWishlist } from "../context/useWishlist";
 import ProductQuickView from "./ProductQuickView";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
@@ -16,10 +17,9 @@ const FeaturedProducts = () => {
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:5000/api/product/show",
-          { timeout: 2000 },
-        );
+        const response = await axios.get(`${API_BASE_URL}/api/product/show`, {
+          timeout: 2000,
+        });
         const savedProducts = (
           Array.isArray(response.data) ? response.data : []
         )

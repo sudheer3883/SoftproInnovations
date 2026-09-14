@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
@@ -33,9 +34,7 @@ const OrderSuccess = () => {
         }
 
         // If not found in localStorage, fetch from backend API
-        const res = await axios.get(
-          `http://localhost:5000/api/order/${orderId}`,
-        );
+        const res = await axios.get(`${API_BASE_URL}/api/order/${orderId}`);
         if (res.data) {
           setOrder(res.data);
         }

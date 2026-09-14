@@ -2,6 +2,7 @@ import { useWishlist } from "../../context/useWishlist";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 import productCatalog from "../../data/productCatalog";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -61,9 +62,7 @@ const ProductDetails = () => {
           return;
         }
 
-        const response = await axios.get(
-          `http://localhost:5000/api/product/${id}`,
-        );
+        const response = await axios.get(`${API_BASE_URL}/api/product/${id}`);
         const normalizedProduct = normalizeProduct(response.data);
         setProduct(normalizedProduct);
         setSelectedImage(normalizedProduct.img);

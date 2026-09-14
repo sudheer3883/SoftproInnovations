@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Swiper as SwiperReact, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 import "swiper/css";
 import "swiper/css/autoplay";
@@ -13,10 +14,9 @@ const Swiper = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:5000/api/category/show",
-          { timeout: 2000 },
-        );
+        const response = await axios.get(`${API_BASE_URL}/api/category/show`, {
+          timeout: 2000,
+        });
         const savedCategories = (
           Array.isArray(response.data) ? response.data : []
         )
