@@ -11,6 +11,7 @@ import productCatalog from "../../data/productCatalog";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useCart } from "../../context/CartContext";
+import { resolveProductImage } from "../../data/resolveProductImage";
 
 const toNumber = (value) =>
   Number(String(value ?? 0).replace(/[^0-9.-]/g, "")) || 0;
@@ -20,7 +21,7 @@ const normalizeProduct = (product) => ({
   ...product,
   title: product.title || product.name,
   category: product.category || "Uncategorized",
-  img: product.img || product.image || product.galleryImages?.[0] || "",
+  img: resolveProductImage(product),
   priceValue: toNumber(product.priceValue ?? product.price),
   originalPriceValue: toNumber(
     product.originalPriceValue ?? product.originalPrice,

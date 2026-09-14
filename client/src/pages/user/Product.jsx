@@ -7,6 +7,7 @@ import axios from "axios";
 import { API_BASE_URL, getProductImageUrl } from "../../config/api";
 import { useCart } from "../../context/CartContext";
 import ProductQuickView from "../../components/ProductQuickView";
+import { resolveProductImage } from "../../data/resolveProductImage";
 
 const Product = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -42,7 +43,7 @@ const Product = () => {
               : "",
             featured: Boolean(product.featured),
             inStock: Number(product.stock || 0) > 0,
-            img: product.image || product.galleryImages?.[0] || "",
+            img: resolveProductImage(product),
             badge: product.featured ? "Featured" : "New",
           }));
         const dashboardCategories = (

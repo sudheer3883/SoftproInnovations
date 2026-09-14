@@ -5,6 +5,7 @@ import axios from "axios";
 import { API_BASE_URL, getProductImageUrl } from "../config/api";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { resolveProductImage } from "../data/resolveProductImage";
 
 const FeaturedProducts = () => {
   const [products, setProducts] = useState([]);
@@ -33,7 +34,7 @@ const FeaturedProducts = () => {
               ? `₹${Number(product.originalPrice).toLocaleString("en-IN")}`
               : "",
             inStock: Number(product.stock || 0) > 0,
-            img: product.image || product.galleryImages?.[0] || "",
+            img: resolveProductImage(product),
             badge: product.featured ? "Featured" : "New",
             rating: product.rating || "4.8",
             reviews: product.reviews || 0,
