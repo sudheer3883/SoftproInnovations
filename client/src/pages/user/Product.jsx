@@ -4,7 +4,7 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { API_BASE_URL, getImageUrl } from "../../config/api";
+import { API_BASE_URL, getProductImageUrl } from "../../config/api";
 import { useCart } from "../../context/CartContext";
 import ProductQuickView from "../../components/ProductQuickView";
 
@@ -316,7 +316,7 @@ const Product = () => {
                   >
                     {item.img ? (
                       <img
-                        src={getImageUrl(item.img)}
+                        src={getProductImageUrl(item)}
                         alt={item.title}
                         className="img-fluid"
                         style={{

@@ -2,7 +2,11 @@ import { useWishlist } from "../../context/useWishlist";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { API_BASE_URL, getImageUrl } from "../../config/api";
+import {
+  API_BASE_URL,
+  getImageUrl,
+  getProductImageUrl,
+} from "../../config/api";
 import productCatalog from "../../data/productCatalog";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -147,7 +151,7 @@ const ProductDetails = () => {
               </div>
               <div className="product-details-main-image">
                 {selectedImage ? (
-                  <img src={getImageUrl(selectedImage)} alt={product.title} />
+                  <img src={getProductImageUrl(product)} alt={product.title} />
                 ) : (
                   <i className="bi bi-box-seam" />
                 )}

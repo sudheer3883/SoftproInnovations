@@ -7,3 +7,10 @@ export const getImageUrl = (image) => {
 	if (image.startsWith("/assets/") || image.startsWith("/favicon")) return image;
 	return `${API_BASE_URL}/${image.replace(/^\/+/, "")}`;
 };
+
+export const getProductImageUrl = (product) => {
+	if (product?._id && product?.image) {
+		return `${API_BASE_URL}/api/product/${product._id}/image`;
+	}
+	return getImageUrl(product?.image || product?.img || product?.galleryImages?.[0]);
+};
