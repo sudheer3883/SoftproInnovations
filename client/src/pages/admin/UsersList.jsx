@@ -6,6 +6,8 @@ const UsersList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editingUser, setEditingUser] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/user/show`)
@@ -36,6 +38,40 @@ const UsersList = () => {
       setError("");
     } catch (deleteError) {
       setError(deleteError.response?.data?.msg || "Failed to delete user.");
+    }
+  };
+
+  const handleEditChange = (event) => {
+    setEditingUser((currentUser) => ({
+      ...currentUser,
+      [event.target.name]: event.target.value,
+    }));
+  };
+
+  const handleEditSubmit = async (event) => {
+    event.preventDefault();
+    setIsSaving(true);
+    setError("");
+    try {
+      const response = await axios.patch(
+        `${API_BASE_URL}/api/user/updated/${editingUser._id}`,
+        {
+          name: editingUser.name,
+          email: editingUser.email,
+          mobile: editingUser.mobile,
+          status: editingUser.status,
+        },
+      );
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user._id === editingUser._id ? response.data.user : user,
+        ),
+      );
+      setEditingUser(null);
+    } catch (saveError) {
+      setError(saveError.response?.data?.msg || "Failed to update user.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -98,7 +134,12 @@ const UsersList = () => {
                       </span>
                     </td>
                     <td>
-                      <button className="btn btn-sm btn-outline-secondary me-2">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary me-2"
+                        onClick={() => setEditingUser({ ...user })}
+                        title={`Edit ${user.name}`}
+                      >
                         <i className="bi bi-pencil"></i>
                       </button>
                       <button
@@ -117,6 +158,93 @@ const UsersList = () => {
           </table>
         </div>
       </div>
+
+      {editingUser && (
+        <div
+          className="modal d-block"
+          role="dialog"
+          aria-modal="true"
+          style={{ backgroundColor: "rgba(15, 23, 42, 0.55)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <form
+              className="modal-content border-0 shadow"
+              onSubmit={handleEditSubmit}
+            >
+              <div className="modal-header">
+                <h5 className="modal-title">Edit User</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setEditingUser(null)}
+                  aria-label="Close"
+                />
+              </div>
+              <div className="modal-body">
+                <label className="form-label">
+                  Name
+                  <input
+                    className="form-control mt-1"
+                    name="name"
+                    value={editingUser.name || ""}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </label>
+                <label className="form-label mt-3">
+                  Email
+                  <input
+                    className="form-control mt-1"
+                    type="email"
+                    name="email"
+                    value={editingUser.email || ""}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </label>
+                <label className="form-label mt-3">
+                  Mobile
+                  <input
+                    className="form-control mt-1"
+                    name="mobile"
+                    value={editingUser.mobile || ""}
+                    onChange={handleEditChange}
+                  />
+                </label>
+                <label className="form-label mt-3">
+                  Status
+                  <select
+                    className="form-select mt-1"
+                    name="status"
+                    value={editingUser.status || "active"}
+                    onChange={handleEditChange}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="delete">Delete</option>
+                  </select>
+                </label>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  onClick={() => setEditingUser(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

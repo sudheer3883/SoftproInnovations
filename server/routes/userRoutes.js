@@ -136,7 +136,23 @@ Router.patch("/change-password/:id", async (req, res) => {
 
 
 Router.patch("/updated/:id", async (req, res) => {
-    res.json("Admin information patch");
+    try {
+        const { name, email, mobile, status } = req.body;
+        if (!name || !email) {
+            return res.status(400).json({ msg: "Name and email are required" });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id,
+            { name: name.trim(), email: email.trim().toLowerCase(), mobile: mobile || "Not provided", status: status || "active" },
+            { new: true, runValidators: true },
+        ).select("-password");
+
+        if (!updatedUser) return res.status(404).json({ msg: "User not found" });
+        return res.json({ msg: "User updated successfully", user: updatedUser });
+    } catch (error) {
+        return res.status(400).json({ msg: "Unable to update user" });
+    }
 });
 
 Router.delete("/delete/:id", async (req, res) => {
