@@ -9,6 +9,9 @@ export const getImageUrl = (image) => {
 };
 
 export const getProductImageUrl = (product) => {
+	if (/^(data:|blob:|https?:\/\/)/i.test(product?.image || "")) {
+		return product.image;
+	}
 	if (product?._id && product?.image) {
 		return `${API_BASE_URL}/api/product/${product._id}/image`;
 	}
