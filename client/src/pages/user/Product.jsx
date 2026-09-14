@@ -25,12 +25,8 @@ const Product = () => {
     const fetchCatalog = async () => {
       try {
         const [productsResponse, categoriesResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/product/show`, {
-            timeout: 2000,
-          }),
-          axios.get(`${API_BASE_URL}/api/category/show`, {
-            timeout: 2000,
-          }),
+          axios.get(`${API_BASE_URL}/api/product/show`),
+          axios.get(`${API_BASE_URL}/api/category/show`),
         ]);
         const savedProducts = (
           Array.isArray(productsResponse.data) ? productsResponse.data : []
