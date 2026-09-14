@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import categoryCatalog from "../../data/categoryCatalog";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, getImageUrl } from "../../config/api";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -520,7 +520,7 @@ const Categories = () => {
                           <div className="d-flex align-items-center gap-2">
                             {cat.image ? (
                               <img
-                                src={cat.image}
+                                src={getImageUrl(cat.image)}
                                 alt={`${name} category`}
                                 style={{
                                   width: "38px",

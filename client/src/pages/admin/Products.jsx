@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import productCatalog from "../../data/productCatalog";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, getImageUrl } from "../../config/api";
 
 const API_URL = `${API_BASE_URL}/api/product`;
 
@@ -278,7 +278,7 @@ const Products = () => {
                         <div className="product-identity">
                           <div className="product-thumb">
                             {product.image ? (
-                              <img src={product.image} alt="" />
+                              <img src={getImageUrl(product.image)} alt="" />
                             ) : (
                               <i className="bi bi-box-seam"></i>
                             )}

@@ -4,7 +4,7 @@ import axios from "axios";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useCart } from "../../context/CartContext";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, getImageUrl } from "../../config/api";
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString("en-IN")}`;
 
@@ -705,7 +705,7 @@ const Checkout = () => {
                         >
                           {item.img ? (
                             <img
-                              src={item.img}
+                              src={getImageUrl(item.img)}
                               alt=""
                               style={{
                                 maxWidth: "100%",

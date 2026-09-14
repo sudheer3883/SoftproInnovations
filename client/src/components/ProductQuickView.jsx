@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getImageUrl } from "../config/api";
 
 const toNumber = (value) =>
   Number(String(value ?? 0).replace(/[^0-9.-]/g, "")) || 0;
@@ -68,7 +69,7 @@ const ProductQuickView = ({ product, onClose, onViewDetails }) => {
           {images[0] ? (
             <img
               className="quick-view-main-image"
-              src={images[0]}
+              src={getImageUrl(images[0])}
               alt={product.title || product.name}
               style={{ "--quick-view-zoom": zoom }}
             />
@@ -83,7 +84,7 @@ const ProductQuickView = ({ product, onClose, onViewDetails }) => {
               {images.map((image, index) => (
                 <img
                   key={`${image}-${index}`}
-                  src={image}
+                  src={getImageUrl(image)}
                   alt={`${product.title || product.name} view ${index + 1}`}
                 />
               ))}

@@ -2,7 +2,7 @@ import { useWishlist } from "../../context/useWishlist";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, getImageUrl } from "../../config/api";
 import productCatalog from "../../data/productCatalog";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -138,13 +138,16 @@ const ProductDetails = () => {
                     onClick={() => setSelectedImage(image)}
                     aria-label={`Show product image ${index + 1}`}
                   >
-                    <img src={image} alt={`${product.title} ${index + 1}`} />
+                    <img
+                      src={getImageUrl(image)}
+                      alt={`${product.title} ${index + 1}`}
+                    />
                   </button>
                 ))}
               </div>
               <div className="product-details-main-image">
                 {selectedImage ? (
-                  <img src={selectedImage} alt={product.title} />
+                  <img src={getImageUrl(selectedImage)} alt={product.title} />
                 ) : (
                   <i className="bi bi-box-seam" />
                 )}

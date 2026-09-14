@@ -2,7 +2,7 @@ import { useWishlist } from "../context/useWishlist";
 import ProductQuickView from "./ProductQuickView";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL, getImageUrl } from "../config/api";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
@@ -197,7 +197,7 @@ const FeaturedProducts = () => {
                 >
                   {item.img ? (
                     <img
-                      src={item.img}
+                      src={getImageUrl(item.img)}
                       alt={item.title}
                       className="img-fluid product-img"
                       style={{

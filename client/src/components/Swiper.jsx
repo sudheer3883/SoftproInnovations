@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Swiper as SwiperReact, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import axios from "axios";
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL, getImageUrl } from "../config/api";
 
 import "swiper/css";
 import "swiper/css/autoplay";
@@ -108,7 +108,7 @@ const Swiper = () => {
                   <div className="category-img-wrapper mb-3 mx-auto d-flex align-items-center justify-content-center">
                     {cat.image ? (
                       <img
-                        src={cat.image}
+                        src={getImageUrl(cat.image)}
                         alt={cat.displayName}
                         className="img-fluid category-img"
                         onError={(event) => {

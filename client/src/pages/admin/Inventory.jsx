@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, getImageUrl } from "../../config/api";
 
 const PRODUCT_API = `${API_BASE_URL}/api/product`;
 
@@ -227,7 +227,7 @@ const Inventory = () => {
                         <div className="inventory-product">
                           <div className="inventory-thumb">
                             {product.image ? (
-                              <img src={product.image} alt="" />
+                              <img src={getImageUrl(product.image)} alt="" />
                             ) : (
                               <i className="bi bi-box-seam"></i>
                             )}
