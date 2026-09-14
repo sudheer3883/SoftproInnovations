@@ -161,4 +161,34 @@ Router.patch('/status/:id', async (req, res) => {
     }
 });
 
+// Delete all orders (Admin clear)
+Router.delete('/clear/all', async (req, res) => {
+    try {
+        const result = await Order.deleteMany({});
+        return res.json({ message: 'All orders cleared successfully', deletedCount: result.deletedCount });
+    } catch (err) {
+        return res.status(500).json({ message: err.message || 'Failed to clear orders' });
+    }
+});
+
+// Delete single order by id or orderId
+Router.delete('/:id', async (req, res) => {
+    try {
+        let order = null;
+        if (req.params.id.startsWith('SPI-')) {
+            order = await Order.findOneAndDelete({ orderId: req.params.id });
+        } else {
+            order = await Order.findByIdAndDelete(req.params.id);
+        }
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        return res.json({ message: 'Order deleted successfully', orderId: req.params.id });
+    } catch (err) {
+        return res.status(500).json({ message: err.message || 'Failed to delete order' });
+    }
+});
+
 module.exports = Router;

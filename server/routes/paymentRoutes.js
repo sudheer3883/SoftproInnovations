@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const Order = require('../models/Order');
+const razorpay = require('../utils/Razorpay');
 
 const Router = express.Router();
 const PAYU_KEY = process.env.PAYU_KEY || process.env.PAYU_MERCHANT_KEY;
@@ -86,6 +87,131 @@ Router.post('/payu/callback', async (req, res) => {
     ? `${FRONTEND_URL}/order-success/${encodeURIComponent(orderId)}?payment=success`
     : `${FRONTEND_URL}/checkout?payment=failed&orderId=${encodeURIComponent(orderId)}`;
   return res.redirect(target);
+});
+
+// ==========================================
+// RAZORPAY PAYMENT ENDPOINTS
+// ==========================================
+
+// Get Razorpay Key Id for client
+Router.get('/razorpay/key', (req, res) => {
+  return res.json({ key: process.env.RAZORPAY_KEY_ID || '' });
+});
+
+// Create Razorpay Order
+Router.post('/razorpay/create-order', async (req, res) => {
+  try {
+    const { amount, orderId, notes } = req.body;
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Valid payment amount is required.' });
+    }
+
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(503).json({ success: false, message: 'Razorpay keys not configured on server.' });
+    }
+
+    const options = {
+      amount: Math.round(numericAmount * 100), // amount in paise
+      currency: 'INR',
+      receipt: `rcpt_${String(orderId || Date.now()).replace(/[^a-zA-Z0-9_-]/g, '').slice(-30)}`,
+      notes: {
+        orderId: String(orderId || ''),
+        ...(notes || {})
+      }
+    };
+
+    const razorpayOrder = await razorpay.orders.create(options);
+
+    return res.status(200).json({
+      success: true,
+      order: razorpayOrder,
+      keyId: process.env.RAZORPAY_KEY_ID
+    });
+  } catch (error) {
+    console.error('Razorpay order creation error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error?.error?.description || error.message || 'Failed to create Razorpay order'
+    });
+  }
+});
+
+// Verify Razorpay Payment Signature
+Router.post('/razorpay/verify', async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderId
+    } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required Razorpay payment confirmation parameters.'
+      });
+    }
+
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) {
+      return res.status(500).json({
+        success: false,
+        message: 'Razorpay secret key not configured on server.'
+      });
+    }
+
+    const signPayload = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', keySecret)
+      .update(signPayload)
+      .digest('hex');
+
+    const isAuthentic = expectedSignature === razorpay_signature;
+
+    if (isAuthentic) {
+      let order = null;
+      if (orderId) {
+        order = await Order.findOne({ orderId: String(orderId) });
+
+        if (order) {
+          order.paymentStatus = 'Completed';
+          order.orderStatus = 'Placed';
+          order.paymentDetails.transactionId = razorpay_payment_id;
+          order.paymentDetails.razorpayOrderId = razorpay_order_id;
+          order.paymentDetails.razorpayPaymentId = razorpay_payment_id;
+          order.paymentDetails.razorpaySignature = razorpay_signature;
+          await order.save();
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Payment verified successfully',
+        order
+      });
+    } else {
+      if (orderId) {
+        const order = await Order.findOne({ orderId: String(orderId) });
+        if (order) {
+          order.paymentStatus = 'Failed';
+          await order.save();
+        }
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment signature. Verification failed.'
+      });
+    }
+  } catch (error) {
+    console.error('Razorpay payment verification error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Payment verification failed'
+    });
+  }
 });
 
 module.exports = Router;

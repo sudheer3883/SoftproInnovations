@@ -54,6 +54,18 @@ Router.get("/show", async (req, res) => {
     });
 });
 
+Router.get("/show/:id", async (req, res) => {
+    try {
+        const data = await Admin.findById(req.params.id).select("name email").lean();
+        if (!data) {
+            return res.status(404).json({ msg: "Admin not found" });
+        }
+        return res.json(data);
+    } catch (error) {
+        return res.status(400).json({ msg: "Invalid admin id" });
+    }
+});
+
 Router.post("/register", async (req, res) => {
     try {
 

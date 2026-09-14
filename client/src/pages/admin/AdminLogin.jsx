@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [data, setData] = useState({ email: "", password: "" });
+  const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,12 +28,17 @@ const AdminLogin = () => {
         data,
       );
       if (res.data.msg === "Success") {
-        localStorage.setItem("name", res.data.name);
-        localStorage.setItem("email", res.data.email || data.email);
-        localStorage.setItem("role", res.data.role);
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("adminId", res.data.adminId);
-        navigate("/dashboard");
+        const storage = rememberMe ? localStorage : sessionStorage;
+        const otherStorage = rememberMe ? sessionStorage : localStorage;
+        ["adminName", "adminEmail", "role", "token", "adminId"].forEach((key) =>
+          otherStorage.removeItem(key),
+        );
+        storage.setItem("adminName", res.data.name);
+        storage.setItem("adminEmail", res.data.email || data.email);
+        storage.setItem("role", res.data.role);
+        storage.setItem("token", res.data.token);
+        storage.setItem("adminId", res.data.adminId);
+        navigate("/dashboard", { state: { loginSuccess: true } });
       } else {
         setError(res.data.msg || "Email or password is incorrect.");
       }
@@ -88,6 +94,19 @@ const AdminLogin = () => {
               required
             />
           </div>
+
+          <label className="admin-remember-option" htmlFor="admin-remember">
+            <input
+              id="admin-remember"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(event) => setRememberMe(event.target.checked)}
+            />
+            <span className="admin-checkmark" aria-hidden="true">
+              <i className="bi bi-check2"></i>
+            </span>
+            <span>Remember me</span>
+          </label>
 
           {error && (
             <p className="admin-login-error" role="alert">

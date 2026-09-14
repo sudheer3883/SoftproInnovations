@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 
 const Router = express.Router();
 const upload = multer({
@@ -16,6 +17,67 @@ const parseJson = (value, fallback) => {
     if (value === undefined || value === null || value === '') return fallback;
     if (typeof value !== 'string') return value;
     try { return JSON.parse(value); } catch { return fallback; }
+};
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const ensureCategoryProducts = async () => {
+    const categories = await Category.find({ status: { $nin: ['inactive', 'delete'] } }).lean();
+    const usedPrices = new Set(
+        (await Product.find({}, { price: 1 }).lean())
+            .map((product) => Number(product.price))
+            .filter((price) => Number.isFinite(price)),
+    );
+
+    for (const category of categories) {
+        const categoryPattern = new RegExp(`^${escapeRegex(category.name)}$`, 'i');
+        const existingProduct = await Product.exists({ category: categoryPattern });
+
+        if (!existingProduct) {
+            let starterPrice = 1000;
+            while (usedPrices.has(starterPrice)) starterPrice += 1;
+
+            await Product.create({
+                name: `${category.name} Starter Product`,
+                category: category.name,
+                brand: 'Softpro Innovation',
+                description: `A reliable ${category.name.toLowerCase()} component for electronics and embedded projects.`,
+                image: category.image || '',
+                price: starterPrice,
+                originalPrice: starterPrice + 100,
+                stock: 25,
+                status: 'active',
+                featured: true
+            });
+            usedPrices.add(starterPrice);
+        }
+    }
+};
+
+const ensureUniqueProductPrices = async () => {
+    const products = await Product.find({}, { price: 1 }).sort({ createdAt: 1 }).lean();
+    const usedPrices = new Set();
+    const updates = [];
+    let nextPrice = Math.max(1000, ...products.map((product) => Number(product.price) || 0)) + 1;
+
+    for (const product of products) {
+        const price = Number(product.price);
+        if (!Number.isFinite(price) || usedPrices.has(price)) {
+            while (usedPrices.has(nextPrice)) nextPrice += 1;
+            updates.push({
+                updateOne: {
+                    filter: { _id: product._id },
+                    update: { $set: { price: nextPrice, originalPrice: nextPrice + 100 } },
+                },
+            });
+            usedPrices.add(nextPrice);
+            nextPrice += 1;
+        } else {
+            usedPrices.add(price);
+        }
+    }
+
+    if (updates.length > 0) await Product.bulkWrite(updates);
 };
 
 const getProductData = (body, file, existing = {}) => {
@@ -43,6 +105,8 @@ const getProductData = (body, file, existing = {}) => {
 
 Router.get('/show', async (req, res) => {
     try {
+        await ensureCategoryProducts();
+        await ensureUniqueProductPrices();
         const data = (await Product.find({}).sort({ createdAt: -1 })).map((product) => {
             const item = product.toObject();
             if (item.brand === 'SIPL') item.brand = '';

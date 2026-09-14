@@ -66,6 +66,45 @@ const Orders = () => {
     }
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    if (
+      !window.confirm("Are you sure you want to permanently delete this order?")
+    )
+      return;
+    try {
+      await axios.delete(`${ORDER_API}/${orderId}`);
+      setOrders((current) =>
+        current.filter(
+          (item) => item.orderId !== orderId && item._id !== orderId,
+        ),
+      );
+      if (
+        selectedOrder &&
+        (selectedOrder.orderId === orderId || selectedOrder._id === orderId)
+      ) {
+        setSelectedOrder(null);
+      }
+    } catch (deleteError) {
+      alert(deleteError.response?.data?.message || "Failed to delete order.");
+    }
+  };
+
+  const handleClearAllOrders = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete ALL orders permanently? This action cannot be undone.",
+      )
+    )
+      return;
+    try {
+      await axios.delete(`${ORDER_API}/clear/all`);
+      setOrders([]);
+      setSelectedOrder(null);
+    } catch (clearError) {
+      alert(clearError.response?.data?.message || "Failed to clear orders.");
+    }
+  };
+
   const filteredOrders =
     statusFilter === "All"
       ? orders
@@ -102,6 +141,15 @@ const Orders = () => {
           >
             Refresh Orders
           </button>
+          {orders.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-outline-danger btn-sm"
+              onClick={handleClearAllOrders}
+            >
+              <i className="bi bi-trash3 me-1" /> Clear All Orders
+            </button>
+          )}
         </div>
       </div>
 
@@ -196,8 +244,8 @@ const Orders = () => {
                         ))}
                       </select>
                     </td>
-                    <td>
-                      <div className="d-flex flex-wrap gap-2">
+                    <td className="orders-action-cell">
+                      <div className="order-actions">
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-primary order-action-button"
@@ -219,6 +267,16 @@ const Orders = () => {
                             <i className="bi bi-x-circle me-1" /> Cancel
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger order-action-button"
+                          onClick={() =>
+                            handleDeleteOrder(order.orderId || order._id)
+                          }
+                          title="Delete Order Permanently"
+                        >
+                          <i className="bi bi-trash3 me-1" /> Delete
+                        </button>
                       </div>
                     </td>
                   </tr>

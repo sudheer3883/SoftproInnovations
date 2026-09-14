@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 const salesData = [
   { name: 'Oct 1', sales: 4000 },
@@ -14,24 +14,32 @@ const salesData = [
 
 
 const DashboardOverview = () => {
-  const [summary, setSummary] = useState({ products: 0, categories: 0, users: 0 });
+  const [summary, setSummary] = useState({ products: 0, categories: 0, users: 0, orders: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const loadSummary = async () => {
       try {
-        const [productsResponse, categoriesResponse, usersResponse] = await Promise.all([
+        const [productsResponse, categoriesResponse, usersResponse, ordersResponse] = await Promise.all([
           axios.get('http://localhost:5000/api/product/show'),
           axios.get('http://localhost:5000/api/category/show'),
           axios.get('http://localhost:5000/api/user/show'),
+          axios.get('http://localhost:5000/api/order/all'),
         ]);
 
         setSummary({
           products: Array.isArray(productsResponse.data) ? productsResponse.data.length : 0,
           categories: Array.isArray(categoriesResponse.data) ? categoriesResponse.data.length : 0,
           users: Array.isArray(usersResponse.data) ? usersResponse.data.length : 0,
+          orders: Array.isArray(ordersResponse.data) ? ordersResponse.data.length : 0,
         });
+        setHasError(false);
       } catch (error) {
         console.error('Failed to load dashboard summary', error);
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -47,6 +55,13 @@ const DashboardOverview = () => {
         Real-time statistics and summary of Softpro Innovation
       </p>
 
+      {hasError && (
+        <div className="dashboard-alert" role="alert">
+          <i className="bi bi-exclamation-triangle"></i>
+          <span>Live statistics are unavailable right now. Please refresh after checking the server.</span>
+        </div>
+      )}
+
       <div className="row g-4 mb-5">
         {/* Stat Card 1 */}
         <div className="col-12 col-sm-6 col-xl-3">
@@ -55,7 +70,7 @@ const DashboardOverview = () => {
             <div className="stat-icon">
               <i className="bi bi-box-seam"></i>
             </div>
-            <div className="stat-value">{summary.products}</div>
+            <div className="stat-value">{isLoading ? '—' : summary.products}</div>
             <div className="stat-label">Total Products</div>
           </div>
         </div>
@@ -66,7 +81,7 @@ const DashboardOverview = () => {
             <div className="stat-icon text-primary">
               <i className="bi bi-tags"></i>
             </div>
-            <div className="stat-value">{summary.categories}</div>
+            <div className="stat-value">{isLoading ? '—' : summary.categories}</div>
             <div className="stat-label">Categories</div>
           </div>
         </div>
@@ -77,7 +92,7 @@ const DashboardOverview = () => {
             <div className="stat-icon text-success">
               <i className="bi bi-cart3"></i>
             </div>
-            <div className="stat-value">0</div>
+            <div className="stat-value">{isLoading ? '—' : summary.orders}</div>
             <div className="stat-label">Total Orders</div>
           </div>
         </div>
@@ -88,7 +103,7 @@ const DashboardOverview = () => {
             <div className="stat-icon" style={{ color: '#8b5cf6' }}>
               <i className="bi bi-people-fill"></i>
             </div>
-            <div className="stat-value">{summary.users}</div>
+            <div className="stat-value">{isLoading ? '—' : summary.users}</div>
             <div className="stat-label">Total Users</div>
           </div>
         </div>
@@ -129,7 +144,7 @@ const DashboardOverview = () => {
           <div className="dashboard-section">
             <h4 className="section-title">Quick Administration Actions</h4>
             <div className="d-flex flex-column gap-3">
-              <Link to="/dashboard/products" className="action-btn-primary">
+              <Link to="/dashboard/products/add" className="action-btn-primary">
                 <i className="bi bi-plus-lg me-2"></i> Add New Product
               </Link>
               <Link to="/dashboard/categories/add" className="action-btn-outline">
@@ -166,7 +181,8 @@ const DashboardOverview = () => {
               <div>
                 <h5 className="notification-title">Customer Complaints Received</h5>
                 <p className="notification-desc">
-                  There are currently 2 total customer message inquiries. <span className="notify-link">Review messages →</span>
+                  Review customer inquiries and follow up with unresolved complaints.{' '}
+                  <Link to="/dashboard/complaints" className="notify-link">Review messages</Link>
                 </p>
               </div>
             </div>

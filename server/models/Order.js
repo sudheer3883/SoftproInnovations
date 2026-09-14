@@ -108,7 +108,7 @@ const OrderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['cod', 'upi', 'card', 'netbanking'],
+        enum: ['cod', 'upi', 'card', 'netbanking', 'razorpay'],
         default: 'cod'
     },
     paymentStatus: {
@@ -120,7 +120,10 @@ const OrderSchema = new mongoose.Schema({
         transactionId: { type: String, default: '' },
         upiId: { type: String, default: '' },
         cardLast4: { type: String, default: '' },
-        bankName: { type: String, default: '' }
+        bankName: { type: String, default: '' },
+        razorpayOrderId: { type: String, default: '' },
+        razorpayPaymentId: { type: String, default: '' },
+        razorpaySignature: { type: String, default: '' }
     },
         orderStatus: {
             type: String,

@@ -6,8 +6,71 @@ import sixteenByTwoImage from '../assets/16.png';
 import ws2812Image from '../assets/17.png';
 import drv8825Image from '../assets/18.png';
 import l298nImage from '../assets/19.png';
+import microcontrollerImage from '../assets/1.avif';
+import sensorImage from '../assets/2.png';
+import communicationModuleImage from '../assets/5.png';
+import batteryComponentImage from '../assets/6.png';
+import developmentBoardImage from '../assets/7.png';
+import actuatorImage from '../assets/9.png';
+import powerComponentImage from '../assets/10.png';
 
 const productCatalog = [
+    {
+        name: 'Arduino Microcontroller',
+        category: 'Microcontrollers',
+        image: microcontrollerImage,
+        price: 899,
+        originalPrice: 1099,
+        description: 'Programmable microcontroller for automation, robotics, and embedded electronics projects.',
+    },
+    {
+        name: 'HC-SR04 Ultrasonic Sensor',
+        category: 'Sensors',
+        image: sensorImage,
+        price: 149,
+        originalPrice: 199,
+        description: 'Ultrasonic distance sensor for obstacle detection, ranging, and robotics projects.',
+    },
+    {
+        name: 'Bluetooth Communication Module',
+        category: 'Communication Modules',
+        image: communicationModuleImage,
+        price: 299,
+        originalPrice: 399,
+        description: 'Wireless serial communication module for connecting microcontrollers to mobile and IoT projects.',
+    },
+    {
+        name: '18650 Battery Holder',
+        category: 'Battery Components',
+        image: batteryComponentImage,
+        price: 79,
+        originalPrice: 99,
+        description: 'Compact battery holder for powering portable electronics and embedded prototypes.',
+    },
+    {
+        name: 'Arduino Development Board',
+        category: 'Development Boards',
+        image: developmentBoardImage,
+        price: 749,
+        originalPrice: 899,
+        description: 'Ready-to-use development board for rapid prototyping, programming, and embedded control.',
+    },
+    {
+        name: 'Micro Servo Motor',
+        category: 'Actuators',
+        image: actuatorImage,
+        price: 249,
+        originalPrice: 299,
+        description: 'Compact positional servo actuator for robotics, mechanisms, and automation projects.',
+    },
+    {
+        name: 'DC-DC Buck Converter',
+        category: 'Power Components',
+        image: powerComponentImage,
+        price: 129,
+        originalPrice: 179,
+        description: 'Adjustable step-down power converter for stable voltage delivery in electronic circuits.',
+    },
     {
         name: '7-Segment Displays',
         category: 'Displays',

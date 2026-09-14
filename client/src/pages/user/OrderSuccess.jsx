@@ -111,7 +111,7 @@ const OrderSuccess = () => {
               style={{ maxWidth: "520px", fontSize: "14.5px" }}
             >
               We have received your order. We're now prepping your electronics
-              components for dispatch from the Softpro Innovations warehouse.
+              components for dispatch from the Softpro Innovation warehouse.
             </p>
             <div className="d-inline-flex align-items-center justify-content-center gap-2 p-2 px-3 rounded-pill bg-light border mx-auto">
               <span className="text-muted small">Order ID:</span>
@@ -191,16 +191,26 @@ const OrderSuccess = () => {
                     >
                       PAYMENT METHOD
                     </span>
-                    <strong className="text-dark text-uppercase">
+                    <strong className="text-dark">
                       {order?.paymentMethod === "cod"
                         ? "Cash on Delivery (COD)"
-                        : order?.paymentMethod?.toUpperCase()}
+                        : order?.paymentMethod === "razorpay"
+                          ? "Razorpay (Online)"
+                          : order?.paymentMethod?.toUpperCase()}
                     </strong>
                     <span
                       className={`badge ms-2 ${order?.paymentStatus === "Completed" ? "bg-success" : "bg-warning text-dark"}`}
                     >
                       {order?.paymentStatus || "Pending"}
                     </span>
+                    {order?.paymentDetails?.transactionId && (
+                      <small
+                        className="d-block text-muted font-monospace mt-1"
+                        style={{ fontSize: "11px" }}
+                      >
+                        Txn ID: {order.paymentDetails.transactionId}
+                      </small>
+                    )}
                   </div>
                   <div>
                     <span
