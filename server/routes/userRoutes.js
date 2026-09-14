@@ -140,7 +140,15 @@ Router.patch("/updated/:id", async (req, res) => {
 });
 
 Router.delete("/delete/:id", async (req, res) => {
-    res.json("Admin information delete");
+    try {
+        const deletedUser = await User.findByIdAndDelete(req.params.id);
+        if (!deletedUser) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+        return res.json({ msg: "User deleted successfully" });
+    } catch (error) {
+        return res.status(400).json({ msg: "Invalid user id" });
+    }
 });
 
 module.exports = Router;
