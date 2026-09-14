@@ -3370,8 +3370,9 @@ body.dark-theme .header-theme-toggle.is-active {
 }
 
 .site-header {
-  position: sticky;
+  position: sticky !important;
   top: 0;
+  width: 100%;
   isolation: isolate;
   z-index: 2000 !important;
 }
