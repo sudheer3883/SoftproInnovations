@@ -29,7 +29,9 @@ const normalizeProduct = (product) => ({
   inStock: product.inStock ?? Number(product.stock || 0) > 0,
   rating: product.rating || "4.8",
   reviews: product.reviews || 0,
-  galleryImages: product.galleryImages || [],
+  galleryImages: (product.galleryImages || []).map((image) =>
+    resolveProductImage(product, image),
+  ),
 });
 
 const ProductDetails = () => {
@@ -152,7 +154,7 @@ const ProductDetails = () => {
               </div>
               <div className="product-details-main-image">
                 {selectedImage ? (
-                  <img src={getProductImageUrl(product)} alt={product.title} />
+                  <img src={getImageUrl(selectedImage)} alt={product.title} />
                 ) : (
                   <i className="bi bi-box-seam" />
                 )}

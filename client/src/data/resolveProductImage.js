@@ -1,7 +1,7 @@
 import productCatalog from "./productCatalog";
 
-export const resolveProductImage = (product) => {
-  const image = product?.image || product?.img || product?.galleryImages?.[0] || "";
+export const resolveProductImage = (product, imageOverride) => {
+  const image = imageOverride || product?.image || product?.img || product?.galleryImages?.[0] || "";
   if (!image.startsWith("/src/assets/")) return image;
 
   const catalogProduct = productCatalog.find(

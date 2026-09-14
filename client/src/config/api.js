@@ -8,12 +8,13 @@ export const getImageUrl = (image) => {
 	return `${API_BASE_URL}/${image.replace(/^\/+/, "")}`;
 };
 
-export const getProductImageUrl = (product) => {
-	if (/^(data:|blob:|https?:\/\/)/i.test(product?.image || "")) {
-		return product.image;
+export const getProductImageUrl = (product, image) => {
+	const source = image || product?.image || product?.img || product?.galleryImages?.[0];
+	if (/^(data:|blob:|https?:\/\/)/i.test(source || "")) {
+		return source;
 	}
-	if (product?._id && product?.image) {
+	if (product?._id && source) {
 		return `${API_BASE_URL}/api/product/${product._id}/image`;
 	}
-	return getImageUrl(product?.image || product?.img || product?.galleryImages?.[0]);
+	return getImageUrl(source);
 };
