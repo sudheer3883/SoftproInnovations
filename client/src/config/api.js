@@ -9,7 +9,7 @@ export const getImageUrl = (image) => {
 };
 
 export const getProductImageUrl = (product, image) => {
-	const source = image || product?.image || product?.img || product?.galleryImages?.[0];
+	const source = image || product?.img || product?.image || product?.galleryImages?.[0];
 	if (/^(data:|blob:|https?:\/\/)/i.test(source || "")) {
 		return source;
 	}
