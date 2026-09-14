@@ -118,24 +118,6 @@ Router.get('/show', async (req, res) => {
     }
 });
 
-Router.get('/:id/image', async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id).select('image').lean();
-        const image = product?.image || '';
-        const match = image.match(/^data:([^;,]+)(;base64)?,(.*)$/s);
-        if (!match) return res.status(404).end();
-
-        const [, contentType, encoding, payload] = match;
-        const buffer = encoding
-            ? Buffer.from(payload, 'base64')
-            : Buffer.from(decodeURIComponent(payload));
-        res.set('Cache-Control', 'public, max-age=86400');
-        return res.type(contentType).send(buffer);
-    } catch (error) {
-        return res.status(400).end();
-    }
-});
-
 Router.get('/:id', async (req, res) => {
     try {
         const data = await Product.findById(req.params.id);
