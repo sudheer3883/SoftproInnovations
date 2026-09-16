@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const requireAdmin = require('../middleware/requireAdmin');
 
 const Router = express.Router();
 const upload = multer({
@@ -130,7 +131,7 @@ Router.get('/:id', async (req, res) => {
     }
 });
 
-Router.post('/register', upload.single('image'), async (req, res) => {
+Router.post('/register', requireAdmin, upload.single('image'), async (req, res) => {
     try {
         const data = await Product.create(getProductData(req.body, req.file));
         return res.status(201).json({ message: 'Product registered successfully', data });
@@ -139,7 +140,7 @@ Router.post('/register', upload.single('image'), async (req, res) => {
     }
 });
 
-Router.put('/update/:id', upload.single('image'), async (req, res) => {
+Router.put('/update/:id', requireAdmin, upload.single('image'), async (req, res) => {
     try {
         const existing = await Product.findById(req.params.id);
         if (!existing) return res.status(404).json({ message: 'Product not found' });
@@ -154,7 +155,7 @@ Router.put('/update/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-Router.delete('/delete/:id', async (req, res) => {
+Router.delete('/delete/:id', requireAdmin, async (req, res) => {
     try {
         const data = await Product.findByIdAndDelete(req.params.id);
         if (!data) return res.status(404).json({ message: 'Product not found' });

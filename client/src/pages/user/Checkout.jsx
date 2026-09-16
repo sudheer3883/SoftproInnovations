@@ -115,6 +115,16 @@ const Checkout = () => {
 
     setIsProcessing(true);
     const user = getLoggedInUser();
+    const customerEmail = String(user?.email || "")
+      .trim()
+      .toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(customerEmail)) {
+      setIsProcessing(false);
+      setErrorMessage(
+        "Please add a valid email address to your profile before placing an order.",
+      );
+      return;
+    }
     const orderId = `SPI-ORD-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const orderData = {
@@ -122,7 +132,7 @@ const Checkout = () => {
       userId: user?.userId || user?.id || user?._id || "guest",
       customer: {
         name: selectedAddress.fullName,
-        email: user?.email || "customer@softpro.com",
+        email: customerEmail,
         mobile: selectedAddress.mobile,
       },
       shippingAddress: selectedAddress,
@@ -237,7 +247,7 @@ const Checkout = () => {
         order_id: razorpayOrder.id,
         prefill: {
           name: selectedAddress.fullName,
-          email: user?.email || "customer@softpro.com",
+          email: customerEmail,
           contact: selectedAddress.mobile,
         },
         notes: {

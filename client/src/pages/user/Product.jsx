@@ -2,25 +2,76 @@ import { useWishlist } from "../../context/useWishlist";
 import { useEffect, useState, useMemo } from "react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL, getProductImageUrl } from "../../config/api";
 import { useCart } from "../../context/CartContext";
 import ProductQuickView from "../../components/ProductQuickView";
 import { resolveProductImage } from "../../data/resolveProductImage";
+import productCatalog from "../../data/productCatalog";
+
+const categoryIcons = {
+  All: "bi-grid-3x3-gap-fill",
+  "Power Components": "bi-lightning-charge-fill",
+  Actuators: "bi-gear-wide-connected",
+  "Battery Components": "bi-battery-charging",
+  "Communication Modules": "bi-wifi",
+  Indicators: "bi-sun-fill",
+  Displays: "bi-display",
+  Motors: "bi-gear-fill",
+  Sensors: "bi-broadcast-pin",
+  Microcontrollers: "bi-cpu-fill",
+  "Development Boards": "bi-code-slash",
+};
+
+const normalizeProduct = (product) => ({
+  ...product,
+  title: product.name || product.title,
+  category: String(product.category || "Uncategorized").trim(),
+  price: Number(product.price || 0),
+  priceStr: `₹${Number(product.price || 0).toLocaleString("en-IN")}`,
+  originalPrice: product.originalPrice
+    ? `₹${Number(product.originalPrice).toLocaleString("en-IN")}`
+    : "",
+  featured: Boolean(product.featured),
+  inStock: Number(product.stock || 0) > 0,
+  img: resolveProductImage(product),
+  badge: product.featured ? "Featured" : "New",
+  reviews: Number(product.reviews || 4),
+  rating: Number(product.rating || 4.8),
+});
+
+const buildCategoryList = (rawCategories = []) => {
+  const uniqueCategories = [
+    ...new Map(
+      rawCategories
+        .filter(Boolean)
+        .map((category) => [
+          String(category).trim().toLowerCase(),
+          String(category).trim(),
+        ]),
+    ).values(),
+  ];
+  return ["All", ...uniqueCategories];
+};
 
 const Product = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Featured");
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState(["All"]);
+  const [products, setProducts] = useState(
+    productCatalog.map((product) => normalizeProduct(product)),
+  );
+  const [categories, setCategories] = useState(
+    buildCategoryList(productCatalog.map((product) => product.category)),
+  );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const navigate = useNavigate();
   const { addToCart, buyNow } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const fetchCatalog = async () => {
@@ -29,23 +80,13 @@ const Product = () => {
           axios.get(`${API_BASE_URL}/api/product/show`),
           axios.get(`${API_BASE_URL}/api/category/show`),
         ]);
+
         const savedProducts = (
           Array.isArray(productsResponse.data) ? productsResponse.data : []
         )
           .filter((product) => (product.status || "active") === "active")
-          .map((product) => ({
-            ...product,
-            title: product.name,
-            price: Number(product.price || 0),
-            priceStr: `₹${Number(product.price || 0).toLocaleString("en-IN")}`,
-            originalPrice: product.originalPrice
-              ? `₹${Number(product.originalPrice).toLocaleString("en-IN")}`
-              : "",
-            featured: Boolean(product.featured),
-            inStock: Number(product.stock || 0) > 0,
-            img: resolveProductImage(product),
-            badge: product.featured ? "Featured" : "New",
-          }));
+          .map(normalizeProduct);
+
         const dashboardCategories = (
           Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []
         )
@@ -56,35 +97,57 @@ const Product = () => {
           .map((category) => category.name || category.category)
           .filter(Boolean)
           .map((category) => category.trim());
-        const uniqueCategories = [
-          ...new Map(
-            dashboardCategories.map((category) => [
-              category.toLowerCase(),
-              category,
-            ]),
-          ).values(),
-        ];
+
+        const uniqueCategories = buildCategoryList(dashboardCategories);
         setProducts(savedProducts);
-        setCategories(["All", ...uniqueCategories]);
+        setCategories(uniqueCategories);
+
+        const requestedCategory = searchParams.get("category");
+        const matchingCategory = uniqueCategories.find(
+          (category) =>
+            category.toLowerCase() === requestedCategory?.trim().toLowerCase(),
+        );
+        if (matchingCategory) setSelectedCategory(matchingCategory);
       } catch (error) {
         console.error("Failed to load products", error);
-        setProducts([]);
-        setCategories(["All"]);
-        setLoadError("Unable to load dashboard products.");
+        const fallbackProducts = productCatalog.map(normalizeProduct);
+        setProducts(fallbackProducts);
+        setCategories(
+          buildCategoryList(fallbackProducts.map((item) => item.category)),
+        );
+        setLoadError("");
       } finally {
         setLoading(false);
       }
     };
     fetchCatalog();
-  }, []);
+  }, [searchParams]);
+
+  const isUserLoggedIn = () => {
+    if (typeof window === "undefined") return false;
+    return Boolean(
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      localStorage.getItem("userProfile") ||
+      sessionStorage.getItem("userProfile"),
+    );
+  };
 
   const handleAddToCart = (event, product) => {
     event.stopPropagation();
+    if (!isUserLoggedIn()) {
+      navigate("/login");
+      return;
+    }
     addToCart(product);
   };
 
   const handleBuyNow = (event, product) => {
     event.stopPropagation();
+    if (!isUserLoggedIn()) {
+      navigate("/login");
+      return;
+    }
     buyNow(product);
     navigate("/checkout");
   };
@@ -135,8 +198,11 @@ const Product = () => {
             </div>
 
             {/* Title */}
+            <span className="product-page-eyebrow">
+              <i className="bi bi-grid-3x3-gap-fill"></i> SHOP BY CATEGORY
+            </span>
             <h1 className="product-hero-title mb-2">
-              All <span className="highlight-italic">Products</span>
+              Our <span className="highlight-italic">Products</span>
             </h1>
 
             {/* Accent Line */}
@@ -155,7 +221,7 @@ const Product = () => {
       <section className="product-catalog-section py-5">
         <div className="container-fluid px-3 px-xl-5">
           {/* Top Search & Sort Control Bar */}
-          <div className="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mb-4">
+          <div className="product-toolbar d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mb-4">
             {/* Search Input Box */}
             <div
               className="position-relative w-100"
@@ -190,7 +256,7 @@ const Product = () => {
           </div>
 
           {/* Category Filter Pills Bar */}
-          <div className="d-flex flex-wrap gap-2 mb-4 align-items-center">
+          <div className="product-category-filters d-flex flex-wrap gap-2 mb-4 align-items-center">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -198,6 +264,10 @@ const Product = () => {
                 className={`btn category-pill-btn ${selectedCategory === cat ? "active" : ""}`}
                 onClick={() => setSelectedCategory(cat)}
               >
+                <i
+                  className={`bi ${categoryIcons[cat] || "bi-grid"}`}
+                  aria-hidden="true"
+                ></i>
                 {cat}
               </button>
             ))}
@@ -224,11 +294,11 @@ const Product = () => {
               No products found.
             </div>
           )}
-          <div className="row g-3 g-md-4">
+          <div className="product-grid row g-3 g-md-4">
             {filteredProducts.map((item) => (
               <div key={item._id} className="col-12 col-sm-6 col-md-6 col-lg-3">
                 <div
-                  className="card h-100 overflow-hidden shadow-sm position-relative border-0 rounded-4"
+                  className="card h-100 overflow-hidden product-card product-card-unified position-relative"
                   role="link"
                   tabIndex={0}
                   onClick={() =>
@@ -242,20 +312,7 @@ const Product = () => {
                         state: { product: item },
                       });
                   }}
-                  style={{
-                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-8px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 15px 30px rgba(0,0,0,0.1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow =
-                      "0 0.125rem 0.25rem rgba(0,0,0,0.075)";
-                  }}
+                  style={{ cursor: "pointer" }}
                 >
                   {/* Badges */}
                   <div className="position-absolute top-0 start-0 p-2 z-3 d-flex flex-column gap-1 mt-2 ms-2">
@@ -287,7 +344,8 @@ const Product = () => {
 
                   {/* Wishlist Button (Always visible on top right) */}
                   <button
-                    className="btn btn-white rounded-circle position-absolute top-0 end-0 m-3 shadow-sm d-flex align-items-center justify-content-center p-0 z-3 border"
+                    className={`wishlist-toggle btn btn-white rounded-circle position-absolute top-0 end-0 m-3 shadow-sm d-flex align-items-center justify-content-center p-0 z-3 border ${isInWishlist(item.id || item._id) ? "is-saved" : ""}`}
+                    aria-pressed={isInWishlist(item.id || item._id)}
                     style={{
                       width: "36px",
                       height: "36px",
@@ -312,25 +370,15 @@ const Product = () => {
 
                   {/* Image Section */}
                   <div
-                    className="product-img-box d-flex align-items-center justify-content-center p-4 position-relative overflow-hidden bg-white"
-                    style={{ height: "230px" }}
+                    className="product-img-box d-flex align-items-center justify-content-center p-4 position-relative overflow-hidden"
+                    style={{ height: "auto" }}
                   >
                     {item.img ? (
                       <img
                         src={getProductImageUrl(item)}
                         alt={item.title}
                         className="img-fluid"
-                        style={{
-                          maxHeight: "160px",
-                          objectFit: "contain",
-                          transition: "transform 0.4s ease",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.transform = "scale(1.1)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.transform = "scale(1)")
-                        }
+                        style={{ maxHeight: "160px", objectFit: "contain" }}
                       />
                     ) : (
                       <i
@@ -341,7 +389,7 @@ const Product = () => {
 
                     {/* Quick View on Hover */}
                     <div
-                      className="position-absolute w-100 h-100 top-0 start-0 d-flex align-items-center justify-content-center"
+                      className="product-card-overlay product-quick-view-overlay position-absolute w-100 h-100 top-0 start-0 d-flex align-items-center justify-content-center"
                       style={{
                         backgroundColor: "rgba(255,255,255,0.4)",
                         opacity: 0,
@@ -351,7 +399,8 @@ const Product = () => {
                       onMouseLeave={(e) => (e.currentTarget.style.opacity = 0)}
                     >
                       <button
-                        className="btn btn-dark rounded-pill shadow-sm px-4 py-2 fw-semibold"
+                        type="button"
+                        className="btn btn-view-action rounded-pill shadow-sm px-4 py-2 fw-semibold"
                         style={{ fontSize: "13px" }}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -364,10 +413,10 @@ const Product = () => {
                   </div>
 
                   {/* Content Section */}
-                  <div className="card-body p-3 p-lg-4 d-flex flex-column bg-white text-start">
+                  <div className="card-body p-3 p-lg-4 d-flex flex-column text-start">
                     {/* Category */}
                     <span
-                      className="text-uppercase fw-bold text-muted mb-1"
+                      className="product-card-category text-uppercase fw-bold mb-1"
                       style={{ fontSize: "11px", letterSpacing: "1px" }}
                     >
                       {item.category}
@@ -435,7 +484,7 @@ const Product = () => {
                       <div className="d-flex align-items-end gap-2">
                         <span
                           className="fw-bold fs-5"
-                          style={{ color: "#3945e0" }}
+                          style={{ color: "#1769d3" }}
                         >
                           {item.priceStr}
                         </span>
@@ -450,7 +499,7 @@ const Product = () => {
                     {/* Action Buttons */}
                     <div className="d-flex gap-2 w-100 mt-auto">
                       <button
-                        className="btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2 d-flex justify-content-center align-items-center gap-1"
+                        className="btn product-card-add-btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2 d-flex justify-content-center align-items-center gap-1"
                         onClick={(event) => handleAddToCart(event, item)}
                         disabled={!item.inStock}
                         style={{
@@ -472,21 +521,21 @@ const Product = () => {
                         <i className="bi bi-cart-plus fs-6"></i> Add
                       </button>
                       <button
-                        className="btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2"
+                        className="btn product-card-buy-btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2"
                         onClick={(event) => handleBuyNow(event, item)}
                         disabled={!item.inStock}
                         style={{
                           fontSize: "13px",
-                          backgroundColor: "#3945e0",
+                          backgroundColor: "#ff7818",
                           color: "white",
-                          border: "1px solid #3945e0",
+                          border: "1px solid #ff7818",
                           transition: "all 0.2s",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#2e36b3";
+                          e.currentTarget.style.backgroundColor = "#e9630b";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#3945e0";
+                          e.currentTarget.style.backgroundColor = "#ff7818";
                         }}
                       >
                         Buy Now

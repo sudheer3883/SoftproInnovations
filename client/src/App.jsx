@@ -1,11 +1,19 @@
 import Home from "./pages/user/Home";
-import { Routes, Route, BrowserRouter, useLocation } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  BrowserRouter,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { useEffect } from "react";
 import About from "./pages/user/About";
 import Contact from "./pages/user/Contact";
+import QuickHelpPage from "./pages/user/QuickHelpPage";
 import Product from "./pages/user/Product";
 import ProductDetails from "./pages/user/ProductDetails";
 import Login from "./pages/user/Login";
+import ForgotPassword from "./pages/user/ForgotPassword";
 import Register from "./pages/user/Register";
 import Profile from "./pages/user/Profile";
 import UserOrders from "./pages/user/Orders";
@@ -47,6 +55,19 @@ const ScrollToTop = () => {
   return null;
 };
 
+const ProtectedAdminRoute = () => {
+  const hasAdminSession = Boolean(
+    (localStorage.getItem("adminId") || sessionStorage.getItem("adminId")) &&
+    (localStorage.getItem("token") || sessionStorage.getItem("token")),
+  );
+
+  return hasAdminSession ? (
+    <DashboardLayout />
+  ) : (
+    <Navigate to="/admin/login" replace />
+  );
+};
+
 export const App = () => {
   return (
     <CartProvider>
@@ -57,6 +78,20 @@ export const App = () => {
             <Route path="/" element={<Home />}></Route>
             <Route path="/about" element={<About />}></Route>
             <Route path="/contact" element={<Contact />}></Route>
+            <Route path="/Contact" element={<Contact />}></Route>
+            <Route
+              path="/track-order"
+              element={<QuickHelpPage kind="track-order" />}
+            ></Route>
+            <Route
+              path="/returns"
+              element={<QuickHelpPage kind="returns" />}
+            ></Route>
+            <Route
+              path="/support"
+              element={<QuickHelpPage kind="support" />}
+            ></Route>
+            <Route path="/b2b" element={<QuickHelpPage kind="b2b" />}></Route>
             <Route path="/Product" element={<Product />}></Route>
             <Route path="/product/:id" element={<ProductDetails />}></Route>
             <Route path="/cart" element={<Cart />}></Route>
@@ -66,6 +101,7 @@ export const App = () => {
               element={<OrderSuccess />}
             ></Route>
             <Route path="/login" element={<Login />}></Route>
+            <Route path="/forgot-password" element={<ForgotPassword />}></Route>
             <Route path="/register" element={<Register />}></Route>
             <Route path="/profile" element={<Profile />}></Route>
             <Route path="/profile/orders" element={<UserOrders />}></Route>
@@ -76,7 +112,7 @@ export const App = () => {
               path="/profile/change-password"
               element={<ChangePassword />}
             ></Route>
-            <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<ProtectedAdminRoute />}>
               <Route index element={<DashboardOverview />} />
               <Route path="categories" element={<Categories />} />
               <Route path="categories/add" element={<AddCategory />} />

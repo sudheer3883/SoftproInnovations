@@ -73,13 +73,16 @@ const DashboardOverview = () => {
   }, []);
 
   return (
-    <>
-      <h1 className="dashboard-header-title">
-        Admin <span>Overview</span>
-      </h1>
-      <p className="dashboard-subtitle">
-        Real-time statistics and summary of Softpro Innovation
-      </p>
+    <div className="dashboard-overview">
+      <div className="overview-intro">
+        <span className="overview-kicker">COMMAND CENTER</span>
+        <h1 className="dashboard-header-title">
+          Admin <span>Overview</span>
+        </h1>
+        <p className="dashboard-subtitle">
+          Real-time statistics and summary of Softpro Innovation
+        </p>
+      </div>
 
       {hasError && (
         <div className="dashboard-alert" role="alert">
@@ -91,7 +94,7 @@ const DashboardOverview = () => {
         </div>
       )}
 
-      <div className="row g-4 mb-5">
+      <div className="row g-3 g-xl-4 mb-4 mb-xl-5 overview-stat-grid">
         {/* Stat Card 1 */}
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="stat-card bg-stat-1">
@@ -145,9 +148,9 @@ const DashboardOverview = () => {
       {/* Analytics Chart */}
       <div className="row mb-5">
         <div className="col-12">
-          <div className="dashboard-section p-4">
+          <div className="dashboard-section overview-panel overview-chart-panel">
             <h4 className="section-title mb-4">Revenue & Sales Growth</h4>
-            <div style={{ width: "100%", height: 300 }}>
+            <div className="overview-chart">
               <ResponsiveContainer>
                 <AreaChart
                   data={salesData}
@@ -155,8 +158,12 @@ const DashboardOverview = () => {
                 >
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3945E0" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#3945E0" stopOpacity={0} />
+                      <stop
+                        offset="5%"
+                        stopColor="#e36f19"
+                        stopOpacity={0.28}
+                      />
+                      <stop offset="95%" stopColor="#e36f19" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -186,7 +193,7 @@ const DashboardOverview = () => {
                   <Area
                     type="monotone"
                     dataKey="sales"
-                    stroke="#3945E0"
+                    stroke="#e36f19"
                     strokeWidth={3}
                     fillOpacity={1}
                     fill="url(#colorSales)"
@@ -201,7 +208,7 @@ const DashboardOverview = () => {
       <div className="row g-4">
         {/* Quick Actions */}
         <div className="col-12 col-lg-6">
-          <div className="dashboard-section">
+          <div className="dashboard-section overview-panel">
             <h4 className="section-title">Quick Administration Actions</h4>
             <div className="d-flex flex-column gap-3">
               <Link to="/dashboard/products/add" className="action-btn-primary">
@@ -227,7 +234,7 @@ const DashboardOverview = () => {
 
         {/* System Health */}
         <div className="col-12 col-lg-6">
-          <div className="dashboard-section">
+          <div className="dashboard-section overview-panel">
             <h4 className="section-title">System Health & Notifications</h4>
 
             <div className="notification-card notify-success">
@@ -262,7 +269,7 @@ const DashboardOverview = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -10,6 +10,11 @@ const Inventory = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [stockFilter, setStockFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [editingStockId, setEditingStockId] = useState("");
+  const [stockDraft, setStockDraft] = useState("");
+  const [lastSynced, setLastSynced] = useState(null);
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
 
   const showAlert = (type, message) => {
@@ -25,6 +30,7 @@ const Inventory = () => {
       setLoading(true);
       const response = await axios.get(`${PRODUCT_API}/show`);
       setProducts(Array.isArray(response.data) ? response.data : []);
+      setLastSynced(new Date());
     } catch (error) {
       showAlert(
         "danger",
@@ -39,24 +45,40 @@ const Inventory = () => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    if (!autoRefresh) return undefined;
+    const timer = window.setInterval(fetchProducts, 30000);
+    return () => window.clearInterval(timer);
+  }, [autoRefresh]);
+
   const inventoryProducts = useMemo(
     () =>
-      products.filter((product) => {
-        const stock = Number(product.stock || 0);
-        const search = searchTerm.toLowerCase();
-        const matchesSearch = [
-          product.name,
-          product.category,
-          product.brand,
-        ].some((value) => (value || "").toLowerCase().includes(search));
-        const matchesFilter =
-          stockFilter === "all" ||
-          (stockFilter === "out" && stock === 0) ||
-          (stockFilter === "low" && stock > 0 && stock < 10) ||
-          (stockFilter === "healthy" && stock >= 10);
-        return matchesSearch && matchesFilter;
-      }),
-    [products, searchTerm, stockFilter],
+      products
+        .filter((product) => {
+          const stock = Number(product.stock || 0);
+          const search = searchTerm.toLowerCase();
+          const matchesSearch = [
+            product.name,
+            product.category,
+            product.brand,
+          ].some((value) => (value || "").toLowerCase().includes(search));
+          const matchesFilter =
+            stockFilter === "all" ||
+            (stockFilter === "out" && stock === 0) ||
+            (stockFilter === "low" && stock > 0 && stock < 10) ||
+            (stockFilter === "healthy" && stock >= 10);
+          return matchesSearch && matchesFilter;
+        })
+        .sort((first, second) => {
+          if (sortBy === "stock")
+            return Number(second.stock || 0) - Number(first.stock || 0);
+          if (sortBy === "price")
+            return Number(second.price || 0) - Number(first.price || 0);
+          return String(first.name || "").localeCompare(
+            String(second.name || ""),
+          );
+        }),
+    [products, searchTerm, stockFilter, sortBy],
   );
 
   const totalUnits = products.reduce(
@@ -76,6 +98,29 @@ const Inventory = () => {
       : Number(stock) < 10
         ? { label: "Low stock", className: "low" }
         : { label: "Healthy", className: "good" };
+
+  const saveStock = async (product) => {
+    const stock = Math.max(0, Number(stockDraft));
+    if (!Number.isFinite(stock)) return;
+    try {
+      await axios.put(`${PRODUCT_API}/update/${product._id}`, {
+        ...product,
+        stock,
+      });
+      setProducts((current) =>
+        current.map((item) =>
+          item._id === product._id ? { ...item, stock } : item,
+        ),
+      );
+      setEditingStockId("");
+      showAlert("success", `${product.name} stock updated to ${stock}.`);
+    } catch (error) {
+      showAlert(
+        "danger",
+        error.response?.data?.message || "Failed to update stock.",
+      );
+    }
+  };
 
   return (
     <div className="inventory-page">
@@ -105,6 +150,23 @@ const Inventory = () => {
           ></i>
           {loading ? "Syncing..." : "Sync Inventory"}
         </button>
+      </div>
+
+      <div className="inventory-live-bar">
+        <span>
+          <i className="bi bi-clock-history" />{" "}
+          {lastSynced
+            ? `Last synced ${lastSynced.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
+            : "Waiting for first sync"}
+        </span>
+        <label>
+          <input
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={(event) => setAutoRefresh(event.target.checked)}
+          />{" "}
+          Auto-refresh every 30 seconds
+        </label>
       </div>
 
       {alert.show && (
@@ -186,6 +248,15 @@ const Inventory = () => {
               <option value="low">Low stock</option>
               <option value="out">Out of stock</option>
             </select>
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              aria-label="Sort inventory"
+            >
+              <option value="name">Sort: Name</option>
+              <option value="stock">Sort: Stock</option>
+              <option value="price">Sort: Price</option>
+            </select>
           </div>
         </div>
         <div className="inventory-table-wrap">
@@ -249,11 +320,39 @@ const Inventory = () => {
                         </strong>
                       </td>
                       <td>
-                        <strong
-                          className={`inventory-quantity ${state.className}`}
-                        >
-                          {Number(product.stock || 0).toLocaleString("en-IN")}
-                        </strong>
+                        {editingStockId === product._id ? (
+                          <div className="inventory-stock-editor">
+                            <input
+                              type="number"
+                              min="0"
+                              value={stockDraft}
+                              onChange={(event) =>
+                                setStockDraft(event.target.value)
+                              }
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => saveStock(product)}
+                              title="Save stock"
+                            >
+                              <i className="bi bi-check2" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`inventory-quantity ${state.className}`}
+                            onClick={() => {
+                              setEditingStockId(product._id);
+                              setStockDraft(String(product.stock || 0));
+                            }}
+                            title="Edit stock"
+                          >
+                            {Number(product.stock || 0).toLocaleString("en-IN")}{" "}
+                            <i className="bi bi-pencil" />
+                          </button>
+                        )}
                       </td>
                       <td>
                         <span className={`stock-pill ${state.className}`}>

@@ -5,7 +5,10 @@ const Footer = () => {
   return (
     <footer
       className="footer-section text-white pt-5 pb-4"
-      style={{ backgroundColor: "#1e3a8a" }}
+      style={{
+        background:
+          "linear-gradient(135deg, #0b1d3d 0%, #123a73 28%, #1d4f9a 58%, #ff8c42 120%)",
+      }}
     >
       <div className="container">
         {/* Main Footer Links Grid */}
@@ -39,9 +42,10 @@ const Footer = () => {
             <p
               className="footer-text mb-4"
               style={{
-                color: "rgba(255, 255, 255, 0.65)",
+                color: "rgba(255, 255, 255, 0.8)",
                 fontSize: "14px",
-                lineHeight: "1.6",
+                lineHeight: "1.7",
+                letterSpacing: "0.01em",
               }}
             >
               Your trusted source for microcontrollers, single board computers,

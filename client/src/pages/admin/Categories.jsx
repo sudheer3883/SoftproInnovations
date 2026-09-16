@@ -625,13 +625,173 @@ const Categories = () => {
         {`
           .categories-page {
             width: 100%;
-            padding-bottom: 30px;
+            max-width: 100%;
+            overflow-x: hidden;
+            min-height: 100%;
+            padding: 4px 0 34px;
+            color: #172b4d;
+          }
+
+          .categories-page > .d-flex h1 {
+            color: #10233f !important;
+            font-weight: 800 !important;
+            letter-spacing: -0.7px;
+          }
+
+          .categories-page > .d-flex h1 span {
+            background: linear-gradient(100deg, #315be8, #e36f19, #315be8);
+            background-size: 220% auto;
+            color: transparent !important;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: admin-gradient-shift 6s ease-in-out infinite;
+          }
+
+          .categories-page > .d-flex > div > .text-muted,
+          .categories-page > .d-flex > div > p.text-muted {
+            color: #52657e !important;
+          }
+
+          .categories-page > .d-flex > .btn {
+            background: linear-gradient(105deg, #315be8, #5c52df 58%, #e36f19) !important;
+            box-shadow: 0 10px 20px rgba(83, 78, 221, 0.2) !important;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+            font-weight: 800 !important;
+          }
+
+          .categories-page > .d-flex > .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px rgba(83, 78, 221, 0.28) !important;
+          }
+
+          .categories-page > .row .card {
+            border: 1px solid #e2e9f3 !important;
+            box-shadow: 0 10px 24px rgba(34, 61, 98, 0.08) !important;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+          }
+
+          .categories-page > .row .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(34, 61, 98, 0.12) !important;
+          }
+
+          .categories-page > .row .col-md-4:nth-child(1) .card {
+            border-top: 4px solid #315be8 !important;
+          }
+
+          .categories-page > .row .col-md-4:nth-child(2) .card {
+            border-top: 4px solid #16a36a !important;
+          }
+
+          .categories-page > .row .col-md-4:nth-child(3) .card {
+            border-top: 4px solid #f59e0b !important;
+          }
+
+          .categories-page > .row .card small {
+            color: #52657e !important;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+          }
+
+          .categories-page > .row .card h3 {
+            color: #10233f !important;
+          }
+
+          .categories-page > .row .col-md-4:nth-child(2) .card h3 {
+            color: #12834f !important;
+          }
+
+          .categories-page > .row .col-md-4:nth-child(3) .card h3 {
+            color: #b66a05 !important;
+          }
+
+          .categories-page > .row + .card {
+            border: 1px solid #dce5ef !important;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 14px 34px rgba(30, 55, 88, 0.08) !important;
+          }
+
+          .categories-page .input-group-text,
+          .categories-page .form-control.bg-light,
+          .categories-page .form-select {
+            color: #172b4d !important;
+            border-color: #d7e1ed !important;
+            background: #f7f9fc !important;
+          }
+
+          .categories-page .form-control::placeholder {
+            color: #71819a !important;
           }
 
           .categories-page .form-control:focus,
           .categories-page .form-select:focus {
-            border-color: #3945E0;
-            box-shadow: 0 0 0 0.15rem rgba(57, 69, 224, 0.10);
+            border-color: #e36f19 !important;
+            box-shadow: 0 0 0 0.2rem rgba(227, 111, 25, 0.14) !important;
+          }
+
+          .categories-table thead th {
+            padding: 0.85rem 0.7rem;
+            color: #263b57;
+            background: #f3f7fc;
+            border-bottom: 1px solid #dce5ef;
+            font-size: 0.75rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+          }
+
+          .categories-table tbody td {
+            padding: 0.78rem 0.7rem;
+            color: #172b4d;
+            border-color: #e8edf3;
+            font-size: 0.87rem;
+          }
+
+          .categories-table tbody tr:hover {
+            background: #f5f9ff;
+          }
+
+          .categories-table .category-description-cell .fw-semibold {
+            color: #10233f !important;
+            font-size: 0.9rem !important;
+          }
+
+          .categories-table .category-description-cell .text-muted,
+          .categories-table td > .text-muted,
+          .categories-table td small.text-muted {
+            color: #52657e !important;
+          }
+
+          .categories-table .badge {
+            padding: 0.42rem 0.65rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.01em;
+          }
+
+          .categories-table .category-actions-cell .btn {
+            border-radius: 8px;
+            transition: transform 160ms ease, background 160ms ease;
+          }
+
+          .categories-table .category-actions-cell .btn:hover {
+            transform: translateY(-2px);
+          }
+
+          .categories-table .category-actions-cell .btn-outline-secondary {
+            border-color: #79a7f2;
+            color: #174f9e;
+            background: #f1f6ff;
+          }
+
+          .categories-table .category-actions-cell .btn-outline-danger {
+            border-color: #e58383;
+            color: #a9232c;
+            background: #fff7f7;
+          }
+
+          .categories-page .form-control:focus,
+          .categories-page .form-select:focus {
+            border-color: #e36f19;
+            box-shadow: 0 0 0 0.15rem rgba(227, 111, 25, 0.10);
           }
 
           .categories-page .table-responsive {
@@ -643,6 +803,7 @@ const Categories = () => {
             min-width: 960px;
             table-layout: fixed;
             margin-bottom: 0;
+            font-weight: 600;
           }
 
           .categories-table th,
@@ -702,7 +863,11 @@ const Categories = () => {
 
           @media (max-width: 768px) {
             .categories-page {
-              padding: 10px;
+              padding: 10px 0 28px;
+            }
+
+            .categories-page > .row + .card .card-body {
+              padding: 1rem !important;
             }
           }
         `}

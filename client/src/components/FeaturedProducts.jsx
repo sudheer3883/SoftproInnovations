@@ -6,6 +6,22 @@ import { API_BASE_URL, getProductImageUrl } from "../config/api";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { resolveProductImage } from "../data/resolveProductImage";
+import productCatalog from "../data/productCatalog";
+
+const normalizeProduct = (product) => ({
+  ...product,
+  title: product.name || product.title,
+  category: String(product.category || "Uncategorized").trim(),
+  price: `₹${Number(product.price || 0).toLocaleString("en-IN")}`,
+  originalPrice: product.originalPrice
+    ? `₹${Number(product.originalPrice).toLocaleString("en-IN")}`
+    : "",
+  inStock: Number(product.stock || 0) > 0,
+  img: resolveProductImage(product),
+  badge: product.featured ? "Featured" : "New",
+  rating: product.rating || "4.8",
+  reviews: product.reviews || 0,
+});
 
 const FeaturedProducts = () => {
   const [products, setProducts] = useState([]);
@@ -21,28 +37,21 @@ const FeaturedProducts = () => {
         const response = await axios.get(`${API_BASE_URL}/api/product/show`, {
           timeout: 2000,
         });
-        const savedProducts = (
-          Array.isArray(response.data) ? response.data : []
-        )
+        const backendProducts = Array.isArray(response.data)
+          ? response.data
+          : [];
+        const savedProducts = backendProducts
           .filter((product) => (product.status || "active") === "active")
-          .map((product) => ({
-            ...product,
-            title: product.name,
-            category: (product.category || "Uncategorized").toUpperCase(),
-            price: `₹${Number(product.price || 0).toLocaleString("en-IN")}`,
-            originalPrice: product.originalPrice
-              ? `₹${Number(product.originalPrice).toLocaleString("en-IN")}`
-              : "",
-            inStock: Number(product.stock || 0) > 0,
-            img: resolveProductImage(product),
-            badge: product.featured ? "Featured" : "New",
-            rating: product.rating || "4.8",
-            reviews: product.reviews || 0,
-          }));
-        setProducts(savedProducts);
+          .map(normalizeProduct);
+
+        setProducts(
+          savedProducts.length
+            ? savedProducts
+            : productCatalog.map(normalizeProduct),
+        );
       } catch (error) {
         console.error("Failed to load featured products", error);
-        setProducts([]);
+        setProducts(productCatalog.map(normalizeProduct));
       } finally {
         setLoading(false);
       }
@@ -50,13 +59,31 @@ const FeaturedProducts = () => {
     fetchFeaturedProducts();
   }, []);
 
+  const isUserLoggedIn = () => {
+    if (typeof window === "undefined") return false;
+    return Boolean(
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      localStorage.getItem("userProfile") ||
+      sessionStorage.getItem("userProfile"),
+    );
+  };
+
   const handleAddToCart = (event, product) => {
     event.stopPropagation();
+    if (!isUserLoggedIn()) {
+      navigate("/login");
+      return;
+    }
     addToCart(product);
   };
 
   const handleBuyNow = (event, product) => {
     event.stopPropagation();
+    if (!isUserLoggedIn()) {
+      navigate("/login");
+      return;
+    }
     buyNow(product);
     navigate("/checkout");
   };
@@ -71,24 +98,20 @@ const FeaturedProducts = () => {
 
   return (
     <section
-      className="featured-products-section py-5"
+      className="featured-products-section product-catalog-section py-5"
       style={{ backgroundColor: "#f2f0ed" }}
     >
       <div className="container-fluid px-3 px-xl-5">
         {/* Section Header */}
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4">
           <div>
-            <span className="text-uppercase small fw-semibold text-orangered tracking-wider">
-              HANDPICKED FOR YOU
+            <span className="featured-eyebrow text-uppercase small fw-semibold tracking-wider">
+              <i className="bi bi-stars"></i> HANDPICKED FOR YOU
             </span>
-            <h2
-              className="display-6 fw-bold mt-1 mb-2"
-              style={{ color: "#1e3a8a" }}
-            >
-              Featured{" "}
-              <span className="text-orangered fst-italic">Products</span>
+            <h2 className="featured-heading display-6 fw-bold mt-2 mb-2">
+              Featured <span className="fst-italic">Products</span>
             </h2>
-            <p className="text-muted mb-0" style={{ maxWidth: "500px" }}>
+            <p className="featured-subtitle text-muted mb-0">
               Top-rated boards and components loved by engineers, students, and
               hobbyists.
             </p>
@@ -96,7 +119,7 @@ const FeaturedProducts = () => {
           <div className="mt-3 mt-md-0">
             <button
               type="button"
-              className="btn btn-outline-secondary rounded-pill px-4 py-2 btn-sm fw-semibold"
+              className="featured-all-button btn rounded-pill px-4 py-2 btn-sm fw-semibold"
               onClick={() => navigate("/Product")}
             >
               All Products &rarr;
@@ -119,7 +142,7 @@ const FeaturedProducts = () => {
           {products.map((item) => (
             <div key={item._id} className="col">
               <div
-                className="card h-100 overflow-hidden shadow-sm product-card position-relative border-0 rounded-4"
+                className="card h-100 overflow-hidden product-card product-card-unified position-relative"
                 role="link"
                 tabIndex={0}
                 onClick={() =>
@@ -131,20 +154,7 @@ const FeaturedProducts = () => {
                       state: { product: item },
                     });
                 }}
-                style={{
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-8px)";
-                  e.currentTarget.style.boxShadow =
-                    "0 15px 30px rgba(0,0,0,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow =
-                    "0 0.125rem 0.25rem rgba(0,0,0,0.075)";
-                }}
+                style={{ cursor: "pointer" }}
               >
                 {/* Badges */}
                 <div className="position-absolute top-0 start-0 p-2 z-3 d-flex flex-column gap-1 mt-2 ms-2">
@@ -168,7 +178,8 @@ const FeaturedProducts = () => {
 
                 {/* Wishlist Button (Always visible on top right) */}
                 <button
-                  className="btn btn-white rounded-circle position-absolute top-0 end-0 m-3 shadow-sm d-flex align-items-center justify-content-center p-0 z-3 border"
+                  className={`wishlist-toggle btn btn-white rounded-circle position-absolute top-0 end-0 m-3 shadow-sm d-flex align-items-center justify-content-center p-0 z-3 border ${isInWishlist(item.id || item._id) ? "is-saved" : ""}`}
+                  aria-pressed={isInWishlist(item.id || item._id)}
                   style={{
                     width: "36px",
                     height: "36px",
@@ -193,25 +204,15 @@ const FeaturedProducts = () => {
 
                 {/* Image Section */}
                 <div
-                  className="product-img-box d-flex align-items-center justify-content-center p-4 position-relative overflow-hidden bg-white"
-                  style={{ height: "230px" }}
+                  className="product-img-box d-flex align-items-center justify-content-center p-4 position-relative overflow-hidden"
+                  style={{ height: "auto" }}
                 >
                   {item.img ? (
                     <img
                       src={getProductImageUrl(item)}
                       alt={item.title}
                       className="img-fluid product-img"
-                      style={{
-                        maxHeight: "160px",
-                        objectFit: "contain",
-                        transition: "transform 0.4s ease",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.transform = "scale(1.1)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.transform = "scale(1)")
-                      }
+                      style={{ maxHeight: "160px", objectFit: "contain" }}
                     />
                   ) : (
                     <i
@@ -246,10 +247,10 @@ const FeaturedProducts = () => {
                 </div>
 
                 {/* Content Section */}
-                <div className="card-body p-3 p-lg-4 d-flex flex-column bg-white">
+                <div className="card-body p-3 p-lg-4 d-flex flex-column">
                   {/* Category */}
                   <span
-                    className="text-uppercase fw-bold text-muted mb-1"
+                    className="product-card-category text-uppercase fw-bold mb-1"
                     style={{ fontSize: "11px", letterSpacing: "1px" }}
                   >
                     {item.category}
@@ -327,7 +328,7 @@ const FeaturedProducts = () => {
                   {/* Action Buttons */}
                   <div className="d-flex gap-2 w-100 mt-auto">
                     <button
-                      className="btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2 d-flex justify-content-center align-items-center gap-1"
+                      className="btn product-card-add-btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2 d-flex justify-content-center align-items-center gap-1"
                       onClick={(event) => handleAddToCart(event, item)}
                       disabled={!item.inStock}
                       style={{
@@ -349,7 +350,7 @@ const FeaturedProducts = () => {
                       <i className="bi bi-cart-plus fs-6"></i> Add
                     </button>
                     <button
-                      className="btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2"
+                      className="btn product-card-buy-btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2"
                       onClick={(event) => handleBuyNow(event, item)}
                       disabled={!item.inStock}
                       style={{

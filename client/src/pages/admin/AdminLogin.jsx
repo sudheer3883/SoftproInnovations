@@ -7,8 +7,14 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const [data, setData] = useState({ email: "", password: "" });
   const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const passwordStrength = [
+    data.password.length >= 6,
+    /[A-Z]/.test(data.password) && /[0-9]/.test(data.password),
+    /[^A-Za-z0-9]/.test(data.password),
+  ].filter(Boolean).length;
 
   const handleChange = (e) => {
     setData((currentData) => ({
@@ -81,16 +87,51 @@ const AdminLogin = () => {
           </div>
           <div className="admin-field">
             <label htmlFor="admin-password">Password</label>
-            <input
-              id="admin-password"
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              value={data.password}
-              onChange={handleChange}
-              autoComplete="current-password"
-              required
-            />
+            <div className="admin-password-wrap">
+              <input
+                id="admin-password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter your password"
+                value={data.password}
+                onChange={handleChange}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="admin-password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                <i
+                  className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
+                />
+              </button>
+            </div>
+            {data.password && (
+              <div className="admin-password-strength" aria-live="polite">
+                <div className="admin-strength-bars" aria-hidden="true">
+                  {[1, 2, 3].map((level) => (
+                    <span
+                      key={level}
+                      className={
+                        level <= passwordStrength
+                          ? `is-level-${passwordStrength}`
+                          : ""
+                      }
+                    />
+                  ))}
+                </div>
+                <span>
+                  {passwordStrength === 3
+                    ? "Strong password"
+                    : passwordStrength === 2
+                      ? "Good password"
+                      : "Use 6+ characters"}
+                </span>
+              </div>
+            )}
           </div>
 
           <label className="admin-remember-option" htmlFor="admin-remember">
@@ -120,6 +161,14 @@ const AdminLogin = () => {
             {isSubmitting ? "Signing in..." : "Sign in to dashboard"}
           </button>
         </form>
+        <div className="admin-login-trust-strip">
+          <span>
+            <i className="bi bi-shield-lock" /> Secure admin access
+          </span>
+          <span>
+            <i className="bi bi-speedometer2" /> Store control center
+          </span>
+        </div>
         <p className="admin-login-footer">Authorized administrators only</p>
       </section>
     </main>

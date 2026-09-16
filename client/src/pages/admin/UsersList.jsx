@@ -6,25 +6,35 @@ const UsersList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [editingUser, setEditingUser] = useState(null);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    password: "",
+  });
   const [isSaving, setIsSaving] = useState(false);
 
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await axios.get(`${API_BASE_URL}/api/user/show`);
+      setUsers(Array.isArray(response.data) ? response.data : []);
+    } catch (loadError) {
+      console.error("Failed to fetch users", loadError);
+      setError(loadError.response?.data?.msg || "Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/user/show`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setUsers(data);
-        } else {
-          setUsers([]);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch users", err);
-        setError("Failed to load users.");
-        setLoading(false);
-      });
+    loadUsers();
   }, []);
 
   const handleDelete = async (user) => {
@@ -36,6 +46,7 @@ const UsersList = () => {
         currentUsers.filter((currentUser) => currentUser._id !== user._id),
       );
       setError("");
+      setSuccessMessage(`${user.name} deleted successfully.`);
     } catch (deleteError) {
       setError(deleteError.response?.data?.msg || "Failed to delete user.");
     }
@@ -68,6 +79,7 @@ const UsersList = () => {
         ),
       );
       setEditingUser(null);
+      setSuccessMessage("User details updated successfully.");
     } catch (saveError) {
       setError(saveError.response?.data?.msg || "Failed to update user.");
     } finally {
@@ -75,24 +87,163 @@ const UsersList = () => {
     }
   };
 
+  const handleAddUserChange = (event) => {
+    setNewUser((currentUser) => ({
+      ...currentUser,
+      [event.target.name]: event.target.value,
+    }));
+  };
+
+  const handleAddUserSubmit = async (event) => {
+    event.preventDefault();
+    setIsSaving(true);
+    setError("");
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/user/register`, {
+        ...newUser,
+      });
+      if (response.data.msg !== "User Registered") {
+        throw new Error(response.data.msg || "Unable to add user.");
+      }
+      setShowAddUser(false);
+      setNewUser({ name: "", email: "", mobile: "", password: "" });
+      setSuccessMessage("User added successfully. Welcome email sent.");
+      await loadUsers();
+    } catch (saveError) {
+      setError(
+        saveError.response?.data?.msg ||
+          saveError.message ||
+          "Failed to add user.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredUsers = users.filter((user) => {
+    const search = searchTerm.toLowerCase();
+    const matchesSearch = [user.name, user.email, user.mobile].some((value) =>
+      String(value || "")
+        .toLowerCase()
+        .includes(search),
+    );
+    const matchesStatus =
+      statusFilter === "all" || (user.status || "active") === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+  const activeUsers = users.filter(
+    (user) => (user.status || "active") === "active",
+  ).length;
+  const inactiveUsers = users.length - activeUsers;
+
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="users-page-header d-flex justify-content-between align-items-center mb-4">
         <h1 className="dashboard-header-title mb-0">
           User <span>Management</span>
         </h1>
         <button
-          className="btn btn-primary"
-          style={{ backgroundColor: "#3945E0", border: "none" }}
+          type="button"
+          className="users-add-button"
+          onClick={() => setShowAddUser(true)}
         >
           <i className="bi bi-person-plus-fill me-1"></i> Add New User
         </button>
       </div>
 
-      <div className="dashboard-section p-4">
+      {successMessage && (
+        <div className="users-feedback users-feedback-success" role="status">
+          <i className="bi bi-check-circle-fill" />{" "}
+          <span>{successMessage}</span>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage("")}
+            aria-label="Dismiss success"
+          >
+            <i className="bi bi-x" />
+          </button>
+        </div>
+      )}
+      {error && (
+        <div className="users-feedback users-feedback-error" role="alert">
+          <i className="bi bi-exclamation-circle-fill" /> <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setError("")}
+            aria-label="Dismiss error"
+          >
+            <i className="bi bi-x" />
+          </button>
+        </div>
+      )}
+
+      <div className="users-stat-grid">
+        <div className="users-stat-card users-stat-total">
+          <span>
+            <i className="bi bi-people-fill" />
+          </span>
+          <div>
+            <small>Total users</small>
+            <strong>{users.length}</strong>
+          </div>
+        </div>
+        <div className="users-stat-card users-stat-active">
+          <span>
+            <i className="bi bi-person-check-fill" />
+          </span>
+          <div>
+            <small>Active users</small>
+            <strong>{activeUsers}</strong>
+          </div>
+        </div>
+        <div className="users-stat-card users-stat-inactive">
+          <span>
+            <i className="bi bi-person-dash-fill" />
+          </span>
+          <div>
+            <small>Inactive users</small>
+            <strong>{inactiveUsers}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="dashboard-section users-panel p-4">
+        <div className="users-toolbar">
+          <div>
+            <h2>
+              Customer directory <span>{filteredUsers.length}</span>
+            </h2>
+            <p>Manage registered customers and account access.</p>
+          </div>
+          <div className="users-toolbar-controls">
+            <label className="users-search">
+              <i className="bi bi-search" />
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search users..."
+              />
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="all">All status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <button
+              type="button"
+              className="users-refresh-button"
+              onClick={loadUsers}
+              title="Refresh users"
+            >
+              <i className="bi bi-arrow-clockwise" />
+            </button>
+          </div>
+        </div>
         <div className="table-responsive">
-          {error && <div className="alert alert-danger mb-3">{error}</div>}
-          <table className="table table-hover align-middle">
+          <table className="table table-hover align-middle users-table">
             <thead className="table-light">
               <tr>
                 <th>Name</th>
@@ -109,14 +260,14 @@ const UsersList = () => {
                     Loading users...
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="text-center py-4">
                     No users found in the database.
                   </td>
                 </tr>
               ) : (
-                users.map((user, index) => (
+                filteredUsers.map((user, index) => (
                   <tr key={user._id || index}>
                     <td>
                       <strong>{user.name}</strong>
@@ -158,6 +309,95 @@ const UsersList = () => {
           </table>
         </div>
       </div>
+
+      {showAddUser && (
+        <div
+          className="modal d-block users-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <form
+              className="modal-content users-modal"
+              onSubmit={handleAddUserSubmit}
+            >
+              <div className="modal-header">
+                <div>
+                  <span className="users-modal-kicker">Customer access</span>
+                  <h5 className="modal-title">Add New User</h5>
+                </div>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowAddUser(false)}
+                  aria-label="Close"
+                />
+              </div>
+              <div className="modal-body">
+                <label className="users-form-label">
+                  Full name
+                  <input
+                    name="name"
+                    value={newUser.name}
+                    onChange={handleAddUserChange}
+                    required
+                    placeholder="Customer name"
+                  />
+                </label>
+                <label className="users-form-label">
+                  Email address
+                  <input
+                    type="email"
+                    name="email"
+                    value={newUser.email}
+                    onChange={handleAddUserChange}
+                    required
+                    placeholder="customer@example.com"
+                  />
+                </label>
+                <label className="users-form-label">
+                  Mobile number
+                  <input
+                    name="mobile"
+                    value={newUser.mobile}
+                    onChange={handleAddUserChange}
+                    required
+                    placeholder="9876543210"
+                  />
+                </label>
+                <label className="users-form-label">
+                  Temporary password
+                  <input
+                    type="password"
+                    name="password"
+                    value={newUser.password}
+                    onChange={handleAddUserChange}
+                    minLength="4"
+                    required
+                    placeholder="Minimum 4 characters"
+                  />
+                </label>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="users-secondary-button"
+                  onClick={() => setShowAddUser(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="users-primary-button"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Creating..." : "Create User"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {editingUser && (
         <div

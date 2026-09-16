@@ -171,8 +171,11 @@ const ProductDetails = () => {
               </div>
               <button
                 type="button"
-                className="product-back-button mb-3"
-                onClick={() => toggleWishlist(product)}
+                className={`product-back-button wishlist-toggle mb-3 ${isInWishlist(product.id || product._id) ? "is-saved" : ""}`}
+                aria-pressed={isInWishlist(product.id || product._id)}
+                onClick={() => {
+                  toggleWishlist(product);
+                }}
               >
                 <i
                   className={`bi ${isInWishlist(product.id || product._id) ? "bi-heart-fill text-danger" : "bi-heart"}`}

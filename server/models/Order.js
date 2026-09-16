@@ -133,6 +133,13 @@ const OrderSchema = new mongoose.Schema({
     estimatedDelivery: {
         type: Date,
         default: () => new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)
+    },
+    deliveryOtp: {
+        hash: { type: String, default: '' },
+        expiresAt: { type: Date, default: null },
+        sentAt: { type: Date, default: null },
+        phone: { type: String, default: '' },
+        email: { type: String, default: '' }
     }
 }, {
     timestamps: true

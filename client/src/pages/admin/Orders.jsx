@@ -8,6 +8,7 @@ const getAvailableStatuses = (currentStatus) =>
   currentStatus === "Cancelled" ? [currentStatus] : ORDER_STATUSES;
 const canCancelOrder = (orderStatus) =>
   ["Placed", "Processing", "Shipped"].includes(orderStatus);
+const ORDER_PROGRESS = ["Placed", "Processing", "Shipped", "Delivered"];
 
 const formatDate = (date) =>
   date
@@ -23,6 +24,7 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [updatingId, setUpdatingId] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
@@ -45,6 +47,8 @@ const Orders = () => {
 
   const updateOrderStatus = async (order, orderStatus) => {
     setUpdatingId(order._id);
+    setError("");
+    setSuccessMessage("");
     try {
       const response = await axios.patch(`${ORDER_API}/status/${order._id}`, {
         orderStatus,
@@ -57,6 +61,13 @@ const Orders = () => {
       );
       setSelectedOrder((current) =>
         current?._id === updatedOrder._id ? updatedOrder : current,
+      );
+      setSuccessMessage(
+        response.data.statusEmailSent
+          ? `Order ${orderStatus.toLowerCase()} and email sent to the customer.`
+          : response.data.emailError
+            ? `Order status updated, but email was not sent: ${response.data.emailError}`
+            : "Order status updated successfully.",
       );
     } catch (updateError) {
       setError(
@@ -85,6 +96,7 @@ const Orders = () => {
       ) {
         setSelectedOrder(null);
       }
+      setSuccessMessage("Order deleted successfully.");
     } catch (deleteError) {
       alert(deleteError.response?.data?.message || "Failed to delete order.");
     }
@@ -101,6 +113,7 @@ const Orders = () => {
       await axios.delete(`${ORDER_API}/clear/all`);
       setOrders([]);
       setSelectedOrder(null);
+      setSuccessMessage("All orders cleared successfully.");
     } catch (clearError) {
       alert(clearError.response?.data?.message || "Failed to clear orders.");
     }
@@ -118,6 +131,7 @@ const Orders = () => {
       <div className="orders-page-toolbar d-flex justify-content-between align-items-center mb-4">
         <h1 className="dashboard-header-title mb-0">
           Recent <span>Orders</span>
+          <small className="orders-total-count">{orders.length} total</small>
         </h1>
         <div className="orders-toolbar-actions d-flex flex-wrap gap-2 align-items-center">
           <select
@@ -154,8 +168,36 @@ const Orders = () => {
         </div>
       </div>
 
+      {successMessage && (
+        <div className="orders-feedback orders-feedback-success" role="status">
+          <i className="bi bi-check-circle-fill" aria-hidden="true" />
+          <span>{successMessage}</span>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage("")}
+            aria-label="Dismiss success message"
+          >
+            <i className="bi bi-x" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="orders-feedback orders-feedback-error" role="alert">
+          <i className="bi bi-exclamation-circle-fill" aria-hidden="true" />
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setError("")}
+            aria-label="Dismiss error message"
+          >
+            <i className="bi bi-x" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       <div className="dashboard-section orders-table-section p-4">
-        <div className="table-responsive">
+        <div className="table-responsive orders-table-scroll">
           <table className="table table-hover align-middle orders-table">
             <thead className="table-light">
               <tr>
@@ -229,7 +271,7 @@ const Orders = () => {
                     </td>
                     <td>
                       <select
-                        className="form-select form-select-sm order-status-select"
+                        className={`form-select form-select-sm order-status-select ${(order.orderStatus || "Placed").toLowerCase() === "delivered" ? "delivered-status-select" : ""}`}
                         value={order.orderStatus || "Placed"}
                         disabled={updatingId === order._id}
                         onChange={(event) =>
@@ -437,6 +479,37 @@ const Orders = () => {
                     </span>
                   </div>
                 </div>
+                <div
+                  className={`order-progress ${(selectedOrder.orderStatus || "Placed").toLowerCase() === "delivered" ? "delivered-progress" : ""}`}
+                  aria-label="Order progress"
+                >
+                  {ORDER_PROGRESS.map((status, index) => {
+                    const currentIndex = ORDER_PROGRESS.indexOf(
+                      selectedOrder.orderStatus || "Placed",
+                    );
+                    const isComplete = currentIndex >= index;
+                    return (
+                      <div
+                        className={`order-progress-step ${isComplete ? "complete" : ""}`}
+                        key={status}
+                      >
+                        <span className="order-progress-dot">
+                          {isComplete ? (
+                            <i className="bi bi-check2" />
+                          ) : (
+                            index + 1
+                          )}
+                        </span>
+                        <span>{status}</span>
+                        {index < ORDER_PROGRESS.length - 1 && (
+                          <span
+                            className={`order-progress-line ${currentIndex > index ? "complete" : ""}`}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               <div className="modal-footer order-details-footer">
                 <div>
@@ -447,7 +520,7 @@ const Orders = () => {
                 </div>
                 <div className="d-flex gap-2">
                   <select
-                    className="form-select form-select-sm order-status-select"
+                    className={`form-select form-select-sm order-status-select ${(selectedOrder.orderStatus || "Placed").toLowerCase() === "delivered" ? "delivered-status-select" : ""}`}
                     style={{ maxWidth: 180 }}
                     value={selectedOrder.orderStatus || "Placed"}
                     disabled={updatingId === selectedOrder._id}

@@ -116,7 +116,13 @@ const AddProduct = () => {
         ? axios.put(`${PRODUCT_API}/update/${id}`, formData)
         : axios.post(`${PRODUCT_API}/register`, formData);
       await request;
-      navigate("/dashboard/products");
+      navigate("/dashboard/products", {
+        state: {
+          productMessage: isEditMode
+            ? "Product updated successfully. Inventory is up to date."
+            : "Product added successfully. Inventory is up to date.",
+        },
+      });
     } catch (error) {
       setAlert({
         show: true,

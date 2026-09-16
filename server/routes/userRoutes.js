@@ -5,11 +5,26 @@ const jwt = require("jsonwebtoken");
 const Router = express.Router();
 
 const User = require("../models/User")
+const requireAdmin = require("../middleware/requireAdmin");
+const { createOtp, hashOtp, sendWelcomeEmail, sendPasswordResetOtp } = require("../services/deliveryOtp");
+
+const normalizeEmail = (value = "") => String(value).trim().replace(/\s+/g, "").toLowerCase();
+const findUserByEmail = async (value) => {
+    const normalizedEmail = normalizeEmail(value);
+    if (!normalizedEmail) return null;
+    return User.findOne({
+        email: {
+            $regex: `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+            $options: "i",
+        },
+    });
+};
 
 Router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ email: email.trim().toLowerCase() });
+        const normalizedEmail = normalizeEmail(email);
+        const user = await findUserByEmail(normalizedEmail);
 
         if (!user) {
             return res.status(401).json({ msg: "Email does not exist" });
@@ -48,7 +63,7 @@ Router.post("/login", async (req, res) => {
 });
 
 
-Router.get("/show", async (req, res) => {
+Router.get("/show", requireAdmin, async (req, res) => {
     try {
         const users = await User.find({}).select("-password").sort({ createdAt: -1 });
         return res.json(users);
@@ -64,12 +79,12 @@ Router.post("/register", async (req, res) => {
 
         const { name, fullName, email, password, mobile, mobileNumber, status, gender, picture } = req.body;
 
-        if (!name && !fullName || !email || !password) {
+        if ((!name && !fullName) || !email || !password) {
             return res.status(400).json({ msg: "Name, email and password are required" });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
-        const a = await User.findOne({ email: normalizedEmail });
+        const normalizedEmail = normalizeEmail(email);
+        const a = await findUserByEmail(normalizedEmail);
 
         if (a) {
             return res.json({ msg: "User already Exist" });
@@ -88,7 +103,20 @@ Router.post("/register", async (req, res) => {
 
         await data.save();
 
-        return res.status(201).json({ msg: "User Registered" });
+        try {
+            await sendWelcomeEmail({
+                email: normalizedEmail,
+                name: data.name,
+            });
+        } catch (emailError) {
+            console.error("Welcome email failed:", emailError.message);
+            await User.findByIdAndDelete(data._id);
+            return res.status(503).json({
+                msg: "Account email could not be sent. Please try again after SMTP is configured.",
+            });
+        }
+
+        return res.status(201).json({ msg: "User Registered", welcomeEmailSent: true });
 
     } catch (er) {
 
@@ -96,6 +124,79 @@ Router.post("/register", async (req, res) => {
 
     }
 
+});
+
+Router.post("/forgot-password/request", async (req, res) => {
+    try {
+        const email = normalizeEmail(req.body.email);
+        if (!/^\S+@\S+\.\S+$/.test(email)) {
+            return res.status(400).json({ msg: "Please enter your registered email address" });
+        }
+
+        const user = await findUserByEmail(email);
+        if (!user) {
+            return res.status(404).json({ msg: "This email address is not registered. Please use the email added to your account." });
+        }
+
+        const otp = createOtp();
+        const deliveryEmail = String(user.email).trim().toLowerCase();
+
+        user.resetOtpHash = hashOtp(otp);
+        user.resetOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        user.resetOtpAttempts = 0;
+        await user.save();
+
+        let messageId;
+        try {
+            messageId = await sendPasswordResetOtp({ email: deliveryEmail, otp });
+        } catch (emailError) {
+            user.resetOtpHash = undefined;
+            user.resetOtpExpires = undefined;
+            user.resetOtpAttempts = 0;
+            await user.save();
+            throw emailError;
+        }
+
+        console.log(`Password reset OTP sent to ${email} (${messageId})`);
+        return res.json({ msg: "If an account exists, an OTP has been sent to that email." });
+    } catch (error) {
+        console.error("Password reset OTP failed:", error.message);
+        return res.status(503).json({ msg: "Unable to send OTP. Please check email service configuration and try again." });
+    }
+});
+
+Router.post("/forgot-password/reset", async (req, res) => {
+    try {
+        const email = normalizeEmail(req.body.email);
+        const otp = String(req.body.otp || "").trim();
+        const newPassword = String(req.body.newPassword || "");
+        if (!/^\S+@\S+\.\S+$/.test(email) || !/^\d{6}$/.test(otp) || newPassword.length < 6) {
+            return res.status(400).json({ msg: "Enter a valid email, 6-digit OTP and password of at least 6 characters" });
+        }
+
+        const user = await findUserByEmail(email);
+        if (!user || !user.resetOtpHash || !user.resetOtpExpires || user.resetOtpExpires.getTime() < Date.now()) {
+            return res.status(400).json({ msg: "OTP is invalid or expired" });
+        }
+        if (Number(user.resetOtpAttempts || 0) >= 5) {
+            return res.status(429).json({ msg: "Too many incorrect attempts. Request a new OTP." });
+        }
+        if (hashOtp(otp) !== user.resetOtpHash) {
+            user.resetOtpAttempts = Number(user.resetOtpAttempts || 0) + 1;
+            await user.save();
+            return res.status(400).json({ msg: "OTP is invalid or expired" });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetOtpHash = undefined;
+        user.resetOtpExpires = undefined;
+        user.resetOtpAttempts = 0;
+        await user.save();
+        return res.json({ msg: "Password reset successfully. You can sign in now." });
+    } catch (error) {
+        console.error("Password reset failed:", error.message);
+        return res.status(500).json({ msg: "Unable to reset password" });
+    }
 });
 
 Router.patch("/change-password/:id", async (req, res) => {
@@ -135,7 +236,7 @@ Router.patch("/change-password/:id", async (req, res) => {
 
 
 
-Router.patch("/updated/:id", async (req, res) => {
+Router.patch("/updated/:id", requireAdmin, async (req, res) => {
     try {
         const { name, email, mobile, status } = req.body;
         if (!name || !email) {
@@ -155,7 +256,7 @@ Router.patch("/updated/:id", async (req, res) => {
     }
 });
 
-Router.delete("/delete/:id", async (req, res) => {
+Router.delete("/delete/:id", requireAdmin, async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) {

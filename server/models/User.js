@@ -32,7 +32,10 @@ picture:{
 gender:{
       type: String,
         required: true
-}
+},
+resetOtpHash: String,
+resetOtpExpires: Date,
+resetOtpAttempts: { type: Number, default: 0 },
 
 },{
     timestamps:true

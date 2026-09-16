@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 
 const Router = express.Router();
 const Admin = require("../models/Admin");
+const requireAdmin = require("../middleware/requireAdmin");
 
 Router.post("/login", async (req, res) => {
     try {
@@ -19,7 +20,7 @@ Router.post("/login", async (req, res) => {
         if (data.password == password) {
 
             const token = jwt.sign(
-                { id: data._id },
+                { id: data._id, role: "admin" },
                 process.env.JWT_SECRET,
                 { expiresIn: "1d" }
             );
@@ -47,6 +48,8 @@ Router.post("/login", async (req, res) => {
         });
     }
 });
+
+Router.use(requireAdmin);
 
 Router.get("/show", async (req, res) => {
     res.json({

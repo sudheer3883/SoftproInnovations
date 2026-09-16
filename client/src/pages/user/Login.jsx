@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 
 const Login = () => {
@@ -14,6 +14,13 @@ const Login = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const registrationMessage = location.state?.registrationMessage || "";
+  const passwordStrength = [
+    password.length >= 6,
+    /[A-Z]/.test(password) && /[0-9]/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ].filter(Boolean).length;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,7 +51,7 @@ const Login = () => {
           createdAt: response.data.createdAt,
         }),
       );
-      navigate("/profile");
+      navigate("/profile", { state: { loginSuccess: true } });
     } catch (err) {
       setError(
         err.response?.data?.msg ||
@@ -59,10 +66,16 @@ const Login = () => {
   return (
     <>
       <Header />
-      <div className="login-page-wrapper d-flex flex-column align-items-center justify-content-center py-5">
+      <div className="login-page-wrapper user-login-page d-flex flex-column align-items-center justify-content-center py-5">
         {/* Main Login Card */}
         <div className="login-card-container">
           <div className="login-card p-4 p-sm-5">
+            {registrationMessage && (
+              <div className="auth-success-message" role="status">
+                <i className="bi bi-check-circle-fill" />
+                <span>{registrationMessage}</span>
+              </div>
+            )}
             {/* Card Header */}
             <div className="login-card-header text-start mb-4">
               <h1 className="login-title mb-1">
@@ -111,13 +124,45 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
                   />
-                  <i
-                    className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"} login-input-icon cursor-pointer`}
+                  <button
+                    type="button"
+                    className="login-password-toggle"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     title={showPassword ? "Hide password" : "Show password"}
-                  ></i>
+                  >
+                    <i
+                      className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
+                    />
+                  </button>
                 </div>
+                {password && (
+                  <div className="login-password-strength" aria-live="polite">
+                    <div className="login-strength-bars" aria-hidden="true">
+                      {[1, 2, 3].map((level) => (
+                        <span
+                          key={level}
+                          className={
+                            level <= passwordStrength
+                              ? `is-level-${passwordStrength}`
+                              : ""
+                          }
+                        />
+                      ))}
+                    </div>
+                    <span>
+                      {passwordStrength === 3
+                        ? "Strong password"
+                        : passwordStrength === 2
+                          ? "Good password"
+                          : "Use 6+ characters"}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Remember Me & Forgot Password */}
@@ -181,6 +226,17 @@ const Login = () => {
                 </Link>
               </div>
             </form>
+            <div className="login-trust-strip" aria-label="Shopping benefits">
+              <span>
+                <i className="bi bi-shield-check" /> Secure sign in
+              </span>
+              <span>
+                <i className="bi bi-lightning-charge" /> Quick checkout
+              </span>
+              <span>
+                <i className="bi bi-arrow-repeat" /> Easy returns
+              </span>
+            </div>
           </div>
         </div>
 

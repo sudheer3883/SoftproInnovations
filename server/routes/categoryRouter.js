@@ -3,6 +3,7 @@ const express = require("express");
 const Router = express.Router();
 
 const Category = require("../models/Category");
+const requireAdmin = require("../middleware/requireAdmin");
 
 
 Router.get("/show", async (req, res) => {
@@ -15,7 +16,7 @@ Router.get("/show", async (req, res) => {
 });
 
 
-Router.post("/register", async (req, res) => {
+Router.post("/register", requireAdmin, async (req, res) => {
 
     try {
 
@@ -52,7 +53,7 @@ Router.post("/register", async (req, res) => {
 });
 
 
-Router.put("/update/:id", async (req, res) => {
+Router.put("/update/:id", requireAdmin, async (req, res) => {
     try {
         const { category, image, description, status } = req.body;
         const data = await Category.findByIdAndUpdate(
@@ -68,7 +69,7 @@ Router.put("/update/:id", async (req, res) => {
 });
 
 
-Router.delete("/delete/:id", async (req, res) => {
+Router.delete("/delete/:id", requireAdmin, async (req, res) => {
     try {
         const data = await Category.findByIdAndDelete(req.params.id);
         if (!data) return res.status(404).json({ message: "Category not found" });

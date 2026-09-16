@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import productCatalog from "../../data/productCatalog";
 import { API_BASE_URL, getImageUrl } from "../../config/api";
@@ -11,7 +11,11 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const showAlert = (type, message) => {
     setAlert({ show: true, type, message });
@@ -81,6 +85,13 @@ const Products = () => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    const updateMessage = location.state?.productMessage;
+    if (!updateMessage) return;
+    showAlert("success", updateMessage);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.pathname, location.state, navigate]);
+
   const handleDelete = async (product) => {
     if (!window.confirm(`Delete "${product.name}"?`)) return;
     try {
@@ -95,15 +106,31 @@ const Products = () => {
     }
   };
 
-  const filteredProducts = products.filter((product) => {
-    const search = searchTerm.toLowerCase();
-    const matchesSearch = [product.name, product.category, product.brand].some(
-      (value) => (value || "").toLowerCase().includes(search),
-    );
-    const matchesStatus =
-      filterStatus === "all" || (product.status || "active") === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredProducts = products
+    .filter((product) => {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = [
+        product.name,
+        product.category,
+        product.brand,
+      ].some((value) => (value || "").toLowerCase().includes(search));
+      const matchesStatus =
+        filterStatus === "all" || (product.status || "active") === filterStatus;
+      const stock = Number(product.stock || 0);
+      const matchesStock =
+        stockFilter === "all" ||
+        (stockFilter === "good" && stock >= 10) ||
+        (stockFilter === "low" && stock > 0 && stock < 10) ||
+        (stockFilter === "out" && stock === 0);
+      return matchesSearch && matchesStatus && matchesStock;
+    })
+    .sort((first, second) => {
+      if (sortBy === "stock")
+        return Number(second.stock || 0) - Number(first.stock || 0);
+      if (sortBy === "price")
+        return Number(second.price || 0) - Number(first.price || 0);
+      return String(first.name || "").localeCompare(String(second.name || ""));
+    });
 
   const activeCount = products.filter(
     (product) => (product.status || "active") === "active",
@@ -237,6 +264,38 @@ const Products = () => {
               <option value="active">Active only</option>
               <option value="inactive">Inactive only</option>
             </select>
+            <select
+              className="product-filter"
+              value={stockFilter}
+              onChange={(event) => setStockFilter(event.target.value)}
+              aria-label="Filter products by stock"
+            >
+              <option value="all">All inventory</option>
+              <option value="good">In stock</option>
+              <option value="low">Low stock</option>
+              <option value="out">Out of stock</option>
+            </select>
+            <select
+              className="product-filter"
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              aria-label="Sort products"
+            >
+              <option value="name">Sort: Name</option>
+              <option value="stock">Sort: Stock</option>
+              <option value="price">Sort: Price</option>
+            </select>
+            <button
+              type="button"
+              className="product-refresh-button"
+              onClick={() => {
+                showAlert("success", "Product inventory refreshed.");
+                fetchProducts();
+              }}
+              title="Refresh inventory"
+            >
+              <i className="bi bi-arrow-clockwise" />
+            </button>
           </div>
         </div>
         <div className="product-table-scroll">

@@ -18,6 +18,7 @@ const DashboardLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showAdminPhoto, setShowAdminPhoto] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loginNotice, setLoginNotice] = useState("");
   const [adminProfile, setAdminProfile] = useState({
     name: getAdminStorageValue("adminName") || "Administrator",
@@ -48,7 +49,17 @@ const DashboardLayout = () => {
         storage.setItem("adminName", data.name);
         storage.setItem("adminEmail", data.email);
       })
-      .catch(() => {});
+      .catch((error) => {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          ["adminName", "adminEmail", "role", "token", "adminId"].forEach(
+            (key) => {
+              localStorage.removeItem(key);
+              sessionStorage.removeItem(key);
+            },
+          );
+          navigate("/admin/login", { replace: true });
+        }
+      });
   }, [adminId]);
 
   useEffect(() => {
@@ -77,6 +88,23 @@ const DashboardLayout = () => {
 
   return (
     <div className="dashboard-container">
+      <button
+        type="button"
+        className="dashboard-mobile-toggle"
+        onClick={() => setIsSidebarOpen((open) => !open)}
+        aria-label={isSidebarOpen ? "Close admin menu" : "Open admin menu"}
+        aria-expanded={isSidebarOpen}
+      >
+        <i className={`bi ${isSidebarOpen ? "bi-x-lg" : "bi-list"}`} />
+      </button>
+      {isSidebarOpen && (
+        <button
+          type="button"
+          className="dashboard-sidebar-backdrop"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-label="Close admin menu"
+        />
+      )}
       {loginNotice && (
         <div className="admin-login-success" role="status">
           <i className="bi bi-check-circle-fill" aria-hidden="true"></i>
@@ -91,7 +119,7 @@ const DashboardLayout = () => {
         </div>
       )}
       {/* Sidebar */}
-      <aside className="dashboard-sidebar">
+      <aside className={`dashboard-sidebar ${isSidebarOpen ? "is-open" : ""}`}>
         <div className="sidebar-profile text-center">
           <div className="avatar-circle mx-auto">
             {showAdminPhoto ? (
@@ -113,7 +141,7 @@ const DashboardLayout = () => {
 
         <div className="sidebar-nav-title text-uppercase">Admin Controls</div>
 
-        <ul className="sidebar-nav">
+        <ul className="sidebar-nav" onClick={() => setIsSidebarOpen(false)}>
           <li>
             <NavLink
               to="/dashboard"

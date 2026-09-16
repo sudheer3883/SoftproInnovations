@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { Link } from "react-router-dom";
@@ -9,16 +9,44 @@ const Contact = () => {
   const [category, setCategory] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", {
-      fullName,
+    let tickets;
+    try {
+      tickets = JSON.parse(
+        localStorage.getItem("softpro-admin-complaints") || "[]",
+      );
+    } catch {
+      tickets = [];
+    }
+
+    const ticket = {
+      id: `TKT-${Math.floor(900 + Math.random() * 90)}`,
+      customer: fullName,
       email,
-      category,
-      subject,
+      subject: subject || category,
+      date: new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      priority: category === "Technical Support" ? "High" : "Medium",
+      status: "Open",
       message,
-    });
+    };
+
+    localStorage.setItem(
+      "softpro-admin-complaints",
+      JSON.stringify([ticket, ...tickets]),
+    );
+    setSubmitted(true);
+    setFullName("");
+    setEmail("");
+    setCategory("");
+    setSubject("");
+    setMessage("");
   };
 
   return (
@@ -162,7 +190,10 @@ const Contact = () => {
                     className="quick-help-item d-flex align-items-center justify-content-between p-2 rounded-2 text-decoration-none"
                   >
                     <span className="d-flex align-items-center gap-2">
-                      <span className="fs-5">📦</span> Track your order
+                      <span className="quick-help-icon">
+                        <i className="bi bi-box-seam" />
+                      </span>{" "}
+                      Track your order
                     </span>
                     <i className="bi bi-arrow-right text-muted fs-6"></i>
                   </Link>
@@ -172,7 +203,10 @@ const Contact = () => {
                     className="quick-help-item d-flex align-items-center justify-content-between p-2 rounded-2 text-decoration-none"
                   >
                     <span className="d-flex align-items-center gap-2">
-                      <span className="fs-5">🔄</span> Return & refund policy
+                      <span className="quick-help-icon">
+                        <i className="bi bi-arrow-repeat" />
+                      </span>{" "}
+                      Return & refund policy
                     </span>
                     <i className="bi bi-arrow-right text-muted fs-6"></i>
                   </Link>
@@ -182,7 +216,10 @@ const Contact = () => {
                     className="quick-help-item d-flex align-items-center justify-content-between p-2 rounded-2 text-decoration-none"
                   >
                     <span className="d-flex align-items-center gap-2">
-                      <span className="fs-5">🔧</span> Technical support
+                      <span className="quick-help-icon">
+                        <i className="bi bi-tools" />
+                      </span>{" "}
+                      Technical support
                     </span>
                     <i className="bi bi-arrow-right text-muted fs-6"></i>
                   </Link>
@@ -192,7 +229,10 @@ const Contact = () => {
                     className="quick-help-item d-flex align-items-center justify-content-between p-2 rounded-2 text-decoration-none"
                   >
                     <span className="d-flex align-items-center gap-2">
-                      <span className="fs-5">💼</span> Bulk / B2B orders
+                      <span className="quick-help-icon">
+                        <i className="bi bi-briefcase" />
+                      </span>{" "}
+                      Bulk / B2B orders
                     </span>
                     <i className="bi bi-arrow-right text-muted fs-6"></i>
                   </Link>
@@ -210,6 +250,13 @@ const Contact = () => {
                   Fill in the form and our team will get back to you within 24
                   hours.
                 </p>
+
+                {submitted && (
+                  <div className="alert alert-success" role="status">
+                    <i className="bi bi-check-circle-fill me-2" /> Your message
+                    has been submitted. Our team will contact you soon.
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                   {/* Row 1: Full Name & Email */}

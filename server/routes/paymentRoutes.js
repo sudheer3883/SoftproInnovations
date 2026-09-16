@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const Order = require('../models/Order');
 const razorpay = require('../utils/Razorpay');
+const { sendPaymentStatusEmail } = require('../services/deliveryOtp');
 
 const Router = express.Router();
 const PAYU_KEY = process.env.PAYU_KEY || process.env.PAYU_MERCHANT_KEY;
@@ -78,6 +79,15 @@ Router.post('/payu/callback', async (req, res) => {
       if (!success) order.orderStatus = 'Cancelled';
       order.paymentDetails.transactionId = body.mihpayid || body.txnid || '';
       await order.save();
+      try {
+        await sendPaymentStatusEmail({
+          email: String(order.customer?.email || '').trim().toLowerCase(),
+          orderId: order.orderId,
+          paymentStatus: order.paymentStatus
+        });
+      } catch (emailError) {
+        console.error('PayU payment email failed:', emailError.message);
+      }
     }
   } catch (error) {
     console.error('PayU callback order update failed:', error.message);
@@ -184,6 +194,15 @@ Router.post('/razorpay/verify', async (req, res) => {
           order.paymentDetails.razorpayPaymentId = razorpay_payment_id;
           order.paymentDetails.razorpaySignature = razorpay_signature;
           await order.save();
+          try {
+            await sendPaymentStatusEmail({
+              email: String(order.customer?.email || '').trim().toLowerCase(),
+              orderId: order.orderId,
+              paymentStatus: order.paymentStatus
+            });
+          } catch (emailError) {
+            console.error('Razorpay payment email failed:', emailError.message);
+          }
         }
       }
 

@@ -1,6 +1,8 @@
 const express = require('express');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const requireAdmin = require('../middleware/requireAdmin');
+const { sendOrderActivityEmail } = require('../services/deliveryOtp');
 
 const Router = express.Router();
 
@@ -29,10 +31,15 @@ Router.post('/create', async (req, res) => {
             return res.status(400).json({ message: 'Cart items are required to place an order' });
         }
 
+        const customerEmail = String(customer?.email || '').trim().toLowerCase();
+        if (!/^\S+@\S+\.\S+$/.test(customerEmail)) {
+            return res.status(400).json({ message: 'A valid registered customer email is required to place an order' });
+        }
+
         // Create new order record
         const order = new Order({
             userId: userId || '',
-            customer: customer || {},
+            customer: { ...(customer || {}), email: customerEmail },
             shippingAddress,
             items: items.map(item => ({
                 productId: String(item.id || item._id || item.productId || 'item'),
@@ -68,9 +75,26 @@ Router.post('/create', async (req, res) => {
             console.error('Stock decrement notice:', stockErr.message);
         }
 
+        let statusEmailSent = false;
+        let emailErrorMessage = '';
+        try {
+            await sendOrderActivityEmail({
+                email: String(savedOrder.customer?.email || '').trim().toLowerCase(),
+                orderId: savedOrder.orderId,
+                status: savedOrder.orderStatus,
+                order: savedOrder
+            });
+            statusEmailSent = true;
+        } catch (emailErr) {
+            console.error('Order confirmation email failed:', emailErr.message);
+            emailErrorMessage = emailErr.message;
+        }
+
         return res.status(201).json({
             message: 'Order placed successfully',
-            order: savedOrder
+            order: savedOrder,
+            statusEmailSent,
+            emailError: emailErrorMessage || undefined
         });
     } catch (err) {
         console.error('Order creation error:', err);
@@ -79,7 +103,7 @@ Router.post('/create', async (req, res) => {
 });
 
 // Get all orders (for Admin Dashboard)
-Router.get('/all', async (req, res) => {
+Router.get('/all', requireAdmin, async (req, res) => {
     try {
         const orders = await Order.find({}).sort({ createdAt: -1 });
         return res.json(orders);
@@ -121,7 +145,7 @@ Router.get('/:id', async (req, res) => {
 });
 
 // Update order status (Admin or cancellation)
-Router.patch('/status/:id', async (req, res) => {
+Router.patch('/status/:id', requireAdmin, async (req, res) => {
     try {
         const { orderStatus, paymentStatus } = req.body;
         const allowedStatuses = ['Placed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
@@ -150,19 +174,42 @@ Router.patch('/status/:id', async (req, res) => {
             return res.status(409).json({ message: 'A cancelled order cannot be changed' });
         }
 
+        const previousOrderStatus = order.orderStatus;
+        let deliveryOtpSent = false;
+        let statusEmailSent = false;
+        let emailErrorMessage = '';
         if (Object.keys(updateData).length > 0) {
             Object.assign(order, updateData);
             await order.save();
         }
 
-        return res.json({ message: 'Order status updated successfully', order });
+        if (orderStatus && orderStatus !== previousOrderStatus) {
+            const email = String(order.customer?.email || '').trim().toLowerCase();
+            try {
+                await sendOrderActivityEmail({ email, orderId: order.orderId, status: orderStatus, order });
+                statusEmailSent = true;
+            } catch (emailErr) {
+                console.error('Order status email failed:', emailErr.message);
+                emailErrorMessage = emailErr.message;
+            }
+        }
+
+        return res.json({
+            message: statusEmailSent
+                ? `Order ${orderStatus.toLowerCase()} and status email sent to the customer.`
+                : 'Order status updated successfully',
+            deliveryOtpSent,
+            statusEmailSent,
+            emailError: emailErrorMessage || undefined,
+            order
+        });
     } catch (err) {
         return res.status(500).json({ message: err.message || 'Failed to update order status' });
     }
 });
 
 // Delete all orders (Admin clear)
-Router.delete('/clear/all', async (req, res) => {
+Router.delete('/clear/all', requireAdmin, async (req, res) => {
     try {
         const result = await Order.deleteMany({});
         return res.json({ message: 'All orders cleared successfully', deletedCount: result.deletedCount });
@@ -172,7 +219,7 @@ Router.delete('/clear/all', async (req, res) => {
 });
 
 // Delete single order by id or orderId
-Router.delete('/:id', async (req, res) => {
+Router.delete('/:id', requireAdmin, async (req, res) => {
     try {
         let order = null;
         if (req.params.id.startsWith('SPI-')) {
