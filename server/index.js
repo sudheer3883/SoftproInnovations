@@ -35,6 +35,23 @@ app.get("/", (req, res) => {
     res.send("SoftproInnovations Backend API is Running");
 });
 
+app.get("/api/health", (req, res) => {
+    const mongoose = require("mongoose");
+    const states = {
+        0: "disconnected",
+        1: "connected",
+        2: "connecting",
+        3: "disconnecting"
+    };
+    res.json({
+        server: "running",
+        database: states[mongoose.connection.readyState] || "unknown",
+        hasMongoUri: Boolean(process.env.MONGO_URI),
+        isLocalMongo: process.env.MONGO_URI ? process.env.MONGO_URI.includes("localhost") || process.env.MONGO_URI.includes("127.0.0.1") : false,
+        hasJwtSecret: Boolean(process.env.JWT_SECRET)
+    });
+});
+
 app.use("/api/admin", require("./routes/adminRoutes"));
 
 app.use("/api/user", require("./routes/userRoutes"));

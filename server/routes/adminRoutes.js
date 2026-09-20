@@ -41,10 +41,18 @@ Router.post("/login", async (req, res) => {
         }
 
     } catch (er) {
-        console.log(er);
+        console.error("Admin login error:", er);
 
-        return res.json({
-            msg: "Server Error"
+        const isDbError = er.message?.includes("buffering timed out") ||
+                          er.message?.includes("ECONNREFUSED") ||
+                          er.name === "MongooseError" ||
+                          er.name === "MongoServerSelectionError";
+
+        return res.status(500).json({
+            msg: isDbError
+                ? "Database connection failed. Check MONGO_URI in Vercel settings."
+                : "Server Error",
+            error: er.message
         });
     }
 });
