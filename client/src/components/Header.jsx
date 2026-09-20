@@ -10,6 +10,7 @@ const Header = () => {
     () => localStorage.getItem("theme") === "dark",
   );
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const [selectedAccountItem, setSelectedAccountItem] = useState(null);
   const profileMenuRef = useRef(null);
   const location = useLocation();
@@ -67,6 +68,7 @@ const Header = () => {
 
   useEffect(() => {
     setIsProfileMenuOpen(false);
+    setIsNavOpen(false);
   }, [location.pathname]);
 
   const handleLogout = () => {
@@ -118,26 +120,55 @@ const Header = () => {
               />
               Softpro<span>Innovation</span>
             </Link>
-            <button
-              className="navbar-toggler py-1 px-2"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent"
-              aria-expanded="false"
-              aria-label="Toggle navigation"
-            >
-              <span className="navbar-toggler-icon"></span>
-            </button>
+            {/* Mobile Quick Actions + Toggler */}
+            <div className="d-flex align-items-center gap-2 d-lg-none">
+              <button
+                className={`header-theme-toggle p-1 px-2 ${darkMode ? "is-active" : ""}`}
+                type="button"
+                aria-pressed={darkMode}
+                aria-label={darkMode ? "Light mode" : "Dark mode"}
+                onClick={() => setDarkMode((current) => !current)}
+                style={{ minHeight: "34px", borderRadius: "8px", fontSize: "13px" }}
+              >
+                <i className={`bi ${darkMode ? "bi-sun-fill" : "bi-moon-stars-fill"}`} />
+              </button>
+
+              <Link
+                to="/cart"
+                className="header-action header-cart d-flex align-items-center gap-1 position-relative text-decoration-none py-1 px-2.5"
+                style={{ minHeight: "34px", borderRadius: "8px" }}
+                aria-label="View Cart"
+              >
+                <i className="bi bi-cart3 fs-5"></i>
+                {cartCount > 0 && (
+                  <span className="badge rounded-pill bg-danger header-cart-count">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
+              <button
+                className={`navbar-toggler py-1 px-2 ${!isNavOpen ? "collapsed" : ""}`}
+                type="button"
+                onClick={() => setIsNavOpen((prev) => !prev)}
+                aria-controls="navbarSupportedContent"
+                aria-expanded={isNavOpen}
+                aria-label="Toggle navigation"
+              >
+                <span className="navbar-toggler-icon"></span>
+              </button>
+            </div>
+
             <div
-              className="collapse navbar-collapse"
+              className={`collapse navbar-collapse ${isNavOpen ? "show" : ""}`}
               id="navbarSupportedContent"
             >
-              <ul className="navbar-nav site-header-nav mx-auto mb-0 gap-1 gap-lg-3">
+              <ul className="navbar-nav site-header-nav mx-auto mb-0 gap-1 gap-lg-3 py-2 py-lg-0">
                 <li className="nav-item">
                   <NavLink
                     to="/"
                     end
+                    onClick={() => setIsNavOpen(false)}
                     className={({ isActive }) =>
                       `nav-link ${isActive ? "active" : ""}`
                     }
@@ -148,6 +179,7 @@ const Header = () => {
                 <li className="nav-item">
                   <NavLink
                     to="/about"
+                    onClick={() => setIsNavOpen(false)}
                     className={({ isActive }) =>
                       `nav-link ${isActive ? "active" : ""}`
                     }
@@ -158,6 +190,7 @@ const Header = () => {
                 <li className="nav-item">
                   <NavLink
                     to="/Product"
+                    onClick={() => setIsNavOpen(false)}
                     className={({ isActive }) =>
                       `nav-link ${isActive ? "active" : ""}`
                     }
@@ -168,6 +201,7 @@ const Header = () => {
                 <li className="nav-item">
                   <NavLink
                     to="/contact"
+                    onClick={() => setIsNavOpen(false)}
                     className={({ isActive }) =>
                       `nav-link ${isActive ? "active" : ""}`
                     }
@@ -176,9 +210,9 @@ const Header = () => {
                   </NavLink>
                 </li>
               </ul>
-              <div className="site-header-actions d-flex gap-2 align-items-center mt-2 mt-lg-0">
+              <div className="site-header-actions d-flex flex-wrap gap-2 align-items-center mt-2 mt-lg-0 pb-3 pb-lg-0">
                 <button
-                  className={`header-theme-toggle ${darkMode ? "is-active" : ""}`}
+                  className={`header-theme-toggle d-none d-lg-flex ${darkMode ? "is-active" : ""}`}
                   type="button"
                   aria-pressed={darkMode}
                   aria-label={
@@ -194,14 +228,11 @@ const Header = () => {
                 </button>
                 <Link
                   to="/cart"
-                  className="header-action header-cart d-flex align-items-center gap-1 position-relative text-decoration-none"
+                  className="d-none d-lg-flex header-action header-cart align-items-center gap-1 position-relative text-decoration-none"
                 >
                   <i className="bi bi-cart3 fs-6"></i> Cart
                   {cartCount > 0 && (
-                    <span
-                      className="badge rounded-pill bg-danger ms-1"
-                      className="badge rounded-pill bg-danger ms-1 header-cart-count"
-                    >
+                    <span className="badge rounded-pill bg-danger ms-1 header-cart-count">
                       {cartCount}
                     </span>
                   )}
@@ -361,12 +392,14 @@ const Header = () => {
                   <>
                     <Link
                       to="/login"
+                      onClick={() => setIsNavOpen(false)}
                       className="header-action header-login text-decoration-none"
                     >
                       Login
                     </Link>
                     <Link
                       to="/register"
+                      onClick={() => setIsNavOpen(false)}
                       className="header-action header-register text-decoration-none"
                     >
                       Register

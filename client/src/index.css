@@ -10120,3 +10120,152 @@ a:active {
     box-shadow 160ms ease,
     background 160ms ease;
 }
+
+/* =========================================================
+   COMPREHENSIVE MOBILE RESPONSIVE OPTIMIZATIONS
+   ========================================================= */
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Header & Mobile Navigation */
+@media (max-width: 991.98px) {
+  .site-header-navbar {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  .site-header-nav {
+    text-align: left;
+    padding: 10px 0;
+  }
+  .site-header-nav .nav-link {
+    padding: 9px 12px !important;
+    font-size: 15px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .site-header-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: 12px;
+  }
+  .header-account-menu {
+    position: static !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    margin-top: 8px !important;
+  }
+}
+
+/* Products & Cards Mobile Responsive (2-column layout) */
+@media (max-width: 575.98px) {
+  .product-card .card-title {
+    font-size: 12.5px !important;
+    min-height: 34px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.35;
+    font-weight: 700 !important;
+  }
+  .product-card .product-img {
+    max-height: 110px !important;
+  }
+  .product-card-category {
+    font-size: 8.5px !important;
+    letter-spacing: 0.5px !important;
+  }
+  .product-card-actions {
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+  .product-card-actions .btn {
+    font-size: 11.5px !important;
+    padding: 6px 4px !important;
+    min-height: 32px;
+    border-radius: 6px !important;
+    width: 100%;
+  }
+  .product-card-actions .btn i {
+    font-size: 12px;
+  }
+  .product-category-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .product-category-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .category-pill-btn {
+    white-space: nowrap;
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+    flex-shrink: 0;
+  }
+  .product-toolbar {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .product-toolbar > div {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .product-toolbar .product-sort-select {
+    width: 100% !important;
+  }
+  
+  /* Hero & Stats on Mobile */
+  .hero-slide {
+    height: auto !important;
+    min-height: 360px !important;
+    padding: 30px 0 !important;
+  }
+  .hero-heading {
+    font-size: 24px !important;
+    line-height: 1.25 !important;
+  }
+  .hero-text {
+    font-size: 13px !important;
+    margin-bottom: 16px !important;
+  }
+  .stats-bar {
+    padding: 16px 0 !important;
+  }
+  .stat-item h2 {
+    font-size: 20px !important;
+  }
+  .stat-item p {
+    font-size: 11px !important;
+    margin-bottom: 0;
+  }
+  .hero-arrow {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* Touch-friendly table scrolling */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767.98px) {
+  .cart-breadcrumb, .product-breadcrumb {
+    font-size: 12px;
+  }
+  .cart-item-row td {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+  .admin-login-panel {
+    padding: 28px 18px 24px !important;
+    margin: 16px auto;
+  }
+  .admin-login-panel h1 {
+    font-size: 26px !important;
+  }
+}

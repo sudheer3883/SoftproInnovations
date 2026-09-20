@@ -294,9 +294,9 @@ const Product = () => {
               No products found.
             </div>
           )}
-          <div className="product-grid row g-3 g-md-4">
+          <div className="product-grid row g-2 g-sm-3 g-md-4">
             {filteredProducts.map((item) => (
-              <div key={item._id} className="col-12 col-sm-6 col-md-6 col-lg-3">
+              <div key={item._id} className="col-6 col-md-4 col-lg-3">
                 <div
                   className="card h-100 overflow-hidden product-card product-card-unified position-relative"
                   role="link"
@@ -497,7 +497,7 @@ const Product = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="d-flex gap-2 w-100 mt-auto">
+                    <div className="product-card-actions d-flex flex-column flex-sm-row gap-1 gap-sm-2 w-100 mt-auto">
                       <button
                         className="btn product-card-add-btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2 d-flex justify-content-center align-items-center gap-1"
                         onClick={(event) => handleAddToCart(event, item)}

@@ -140,7 +140,7 @@ const FeaturedProducts = () => {
             No featured products available yet.
           </div>
         )}
-        <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+        <div className="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-2 g-sm-3 g-md-4">
           {visibleProducts.map((item) => (
             <div key={item._id} className="col">
               <div
@@ -206,7 +206,7 @@ const FeaturedProducts = () => {
 
                 {/* Image Section */}
                 <div
-                  className="product-img-box d-flex align-items-center justify-content-center p-4 position-relative overflow-hidden"
+                  className="product-img-box d-flex align-items-center justify-content-center p-2 p-sm-4 position-relative overflow-hidden"
                   style={{ height: "auto" }}
                 >
                   {item.img ? (
@@ -218,8 +218,8 @@ const FeaturedProducts = () => {
                     />
                   ) : (
                     <i
-                      className="bi bi-box-seam text-muted"
-                      style={{ fontSize: "55px" }}
+                      className="bi bi-box-seam text-secondary"
+                      style={{ fontSize: "3rem" }}
                     ></i>
                   )}
 
@@ -249,7 +249,7 @@ const FeaturedProducts = () => {
                 </div>
 
                 {/* Content Section */}
-                <div className="card-body p-3 p-lg-4 d-flex flex-column">
+                <div className="card-body p-2 p-sm-3 p-lg-4 d-flex flex-column">
                   {/* Category */}
                   <span
                     className="product-card-category text-uppercase fw-bold mb-1"
@@ -331,7 +331,7 @@ const FeaturedProducts = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="d-flex gap-2 w-100 mt-auto">
+                  <div className="product-card-actions d-flex flex-column flex-sm-row gap-1 gap-sm-2 w-100 mt-auto">
                     <button
                       className="btn product-card-add-btn flex-grow-1 btn-sm py-2 fw-bold rounded-2 d-flex justify-content-center align-items-center gap-1"
                       onClick={(event) => handleAddToCart(event, item)}
