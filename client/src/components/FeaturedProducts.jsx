@@ -96,6 +96,8 @@ const FeaturedProducts = () => {
     setQuickViewProduct(item);
   };
 
+  const visibleProducts = products.slice(0, 8);
+
   return (
     <section
       className="featured-products-section product-catalog-section py-5"
@@ -139,7 +141,7 @@ const FeaturedProducts = () => {
           </div>
         )}
         <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
-          {products.map((item) => (
+          {visibleProducts.map((item) => (
             <div key={item._id} className="col">
               <div
                 className="card h-100 overflow-hidden product-card product-card-unified position-relative"
@@ -261,6 +263,7 @@ const FeaturedProducts = () => {
                     className="card-title fw-bold text-dark mb-2"
                     style={{
                       fontSize: "15px",
+                      fontWeight: 800,
                       minHeight: "44px",
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
@@ -289,20 +292,22 @@ const FeaturedProducts = () => {
                         }
                       ></i>
                     </div>
-                    <span className="fw-bold ms-1 text-dark">
+                    <span className="fw-black ms-1 text-dark">
                       {item.rating}
                     </span>
-                    <span className="text-muted">({item.reviews} reviews)</span>
+                    <span className="text-muted fw-semibold">
+                      ({item.reviews} reviews)
+                    </span>
                   </div>
 
                   {/* Stock Status */}
                   <div className="mb-2" style={{ fontSize: "12.5px" }}>
                     {item.inStock ? (
-                      <span className="text-success fw-semibold">
+                      <span className="text-success fw-bold">
                         <i className="bi bi-check-circle-fill me-1"></i>In Stock
                       </span>
                     ) : (
-                      <span className="text-danger fw-semibold">
+                      <span className="text-danger fw-bold">
                         <i className="bi bi-x-circle-fill me-1"></i>Out of Stock
                       </span>
                     )}
@@ -312,7 +317,7 @@ const FeaturedProducts = () => {
                   <div className="mt-auto d-flex flex-column mb-3">
                     <div className="d-flex align-items-end gap-2">
                       <span
-                        className="fw-bold fs-5"
+                        className="fw-black fs-5"
                         style={{ color: "#3945e0" }}
                       >
                         {item.price}
@@ -328,11 +333,12 @@ const FeaturedProducts = () => {
                   {/* Action Buttons */}
                   <div className="d-flex gap-2 w-100 mt-auto">
                     <button
-                      className="btn product-card-add-btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2 d-flex justify-content-center align-items-center gap-1"
+                      className="btn product-card-add-btn flex-grow-1 btn-sm py-2 fw-bold rounded-2 d-flex justify-content-center align-items-center gap-1"
                       onClick={(event) => handleAddToCart(event, item)}
                       disabled={!item.inStock}
                       style={{
                         fontSize: "13px",
+                        fontWeight: 800,
                         color: "#3945e0",
                         border: "1px solid #3945e0",
                         backgroundColor: "transparent",
@@ -347,14 +353,16 @@ const FeaturedProducts = () => {
                         e.currentTarget.style.color = "#3945e0";
                       }}
                     >
-                      <i className="bi bi-cart-plus fs-6"></i> Add
+                      <i className="bi bi-bag-plus"></i>
+                      <span>Add</span>
                     </button>
                     <button
-                      className="btn product-card-buy-btn flex-grow-1 btn-sm py-2 fw-semibold rounded-2"
+                      className="btn product-card-buy-btn flex-grow-1 btn-sm py-2 fw-bold rounded-2 d-flex justify-content-center align-items-center gap-2"
                       onClick={(event) => handleBuyNow(event, item)}
                       disabled={!item.inStock}
                       style={{
                         fontSize: "13px",
+                        fontWeight: 800,
                         backgroundColor: "#3945e0",
                         color: "white",
                         border: "1px solid #3945e0",
@@ -367,7 +375,8 @@ const FeaturedProducts = () => {
                         e.currentTarget.style.backgroundColor = "#3945e0";
                       }}
                     >
-                      Buy Now
+                      <i className="bi bi-lightning-charge-fill"></i>
+                      <span>Buy Now</span>
                     </button>
                   </div>
                 </div>
