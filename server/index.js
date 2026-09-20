@@ -20,6 +20,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // ================= Routes =================
 
+app.get("/", (req, res) => {
+    res.send("SoftproInnovations Backend API is Running");
+});
+
 app.use("/api/admin", require("./routes/adminRoutes"));
 
 app.use("/api/user", require("./routes/userRoutes"));
@@ -37,19 +41,14 @@ app.use("/api/payment", require("./routes/paymentRoutes"));
 
 mongoDB()
     .then(() => {
-
-        app.listen(process.env.PORT, () => {
-            console.log(`Server is running on port ${process.env.PORT}`);
-        });
-
+        if (!process.env.VERCEL) {
+            app.listen(process.env.PORT || 5000, () => {
+                console.log(`Server is running on port ${process.env.PORT || 5000}`);
+            });
+        }
     })
     .catch((error) => {
-
-        console.error(
-            "Database is not connected:",
-            error.message
-        );
-
-        process.exit(1);
-
+        console.error("Database is not connected:", error.message);
     });
+
+module.exports = app;
