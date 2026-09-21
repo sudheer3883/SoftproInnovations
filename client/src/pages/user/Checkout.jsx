@@ -159,7 +159,7 @@ const Checkout = () => {
             ...orderData,
             paymentStatus: "Pending",
           },
-          { timeout: 5000 },
+          { timeout: 15000 },
         );
       } catch (backendError) {
         console.warn("Backend order save notice:", backendError.message);
@@ -206,7 +206,7 @@ const Checkout = () => {
             ...orderData,
             paymentStatus: "Pending",
           },
-          { timeout: 5000 },
+          { timeout: 15000 },
         );
       } catch (orderSaveErr) {
         console.warn("Order pre-save notice:", orderSaveErr.message);

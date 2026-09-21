@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const Order = require('../models/Order');
 const razorpay = require('../utils/Razorpay');
-const { sendPaymentStatusEmail } = require('../services/deliveryOtp');
+const { sendPaymentStatusEmail, sendOrderActivityEmail } = require('../services/deliveryOtp');
 
 const Router = express.Router();
 const PAYU_KEY = process.env.PAYU_KEY || process.env.PAYU_MERCHANT_KEY;
@@ -195,13 +195,18 @@ Router.post('/razorpay/verify', async (req, res) => {
           order.paymentDetails.razorpaySignature = razorpay_signature;
           await order.save();
           try {
-            await sendPaymentStatusEmail({
-              email: String(order.customer?.email || '').trim().toLowerCase(),
-              orderId: order.orderId,
-              paymentStatus: order.paymentStatus
-            });
+            const customerEmail = String(order.customer?.email || '').trim().toLowerCase();
+            if (customerEmail) {
+              await sendOrderActivityEmail({
+                email: customerEmail,
+                orderId: order.orderId,
+                status: 'Confirmed',
+                order
+              });
+              console.log(`Order confirmation email sent to ${customerEmail} for Razorpay order ${order.orderId}`);
+            }
           } catch (emailError) {
-            console.error('Razorpay payment email failed:', emailError.message);
+            console.error('Razorpay order confirmation email failed:', emailError.message);
           }
         }
       }

@@ -133,7 +133,8 @@ const Cart = () => {
               {/* Items Column */}
               <div className="col-lg-8">
                 <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-3 bg-white">
-                  <div className="table-responsive">
+                  {/* Desktop Table View */}
+                  <div className="table-responsive d-none d-md-block">
                     <table className="table align-middle mb-0">
                       <thead className="table-light">
                         <tr
@@ -290,6 +291,110 @@ const Cart = () => {
                         })}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Mobile Cards View */}
+                  <div className="d-md-none p-3 d-flex flex-column gap-3">
+                    {cart.map((item) => {
+                      const itemPrice = Number(
+                        item.priceValue ?? item.price ?? 0,
+                      );
+                      const itemTotal = itemPrice * (item.quantity || 1);
+                      const productId = item.id || item._id;
+
+                      return (
+                        <div
+                          key={productId}
+                          className="border rounded-3 p-2.5 bg-light d-flex flex-column gap-2"
+                        >
+                          <div className="d-flex align-items-start gap-2.5">
+                            <div
+                              className="d-flex align-items-center justify-content-center bg-white rounded-2 p-1 flex-shrink-0"
+                              style={{
+                                width: "60px",
+                                height: "60px",
+                                border: "1px solid #e2e8f0",
+                              }}
+                            >
+                              {item.img ? (
+                                <img
+                                  src={getImageUrl(item.img)}
+                                  alt={item.title}
+                                  style={{
+                                    maxWidth: "100%",
+                                    maxHeight: "100%",
+                                    objectFit: "contain",
+                                  }}
+                                />
+                              ) : (
+                                <i className="bi bi-box-seam text-secondary fs-5"></i>
+                              )}
+                            </div>
+                            <div className="flex-grow-1 min-w-0">
+                              <h6 className="mb-1 fw-semibold text-truncate" style={{ fontSize: "13.5px" }}>
+                                <Link
+                                  to={`/product/${productId}`}
+                                  className="text-dark text-decoration-none"
+                                >
+                                  {item.title || item.name}
+                                </Link>
+                              </h6>
+                              <div className="text-muted small">
+                                {formatPrice(itemPrice)} each
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-link text-danger p-1 border-0"
+                              onClick={() => removeFromCart(productId)}
+                              title="Remove item"
+                            >
+                              <i className="bi bi-trash3 fs-6"></i>
+                            </button>
+                          </div>
+
+                          <div className="d-flex justify-content-between align-items-center pt-2 border-top">
+                            <div className="d-inline-flex align-items-center border rounded-pill bg-white p-0.5">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold"
+                                onClick={() =>
+                                  updateQuantity(
+                                    productId,
+                                    (item.quantity || 1) - 1,
+                                  )
+                                }
+                                disabled={item.quantity <= 1}
+                              >
+                                &minus;
+                              </button>
+                              <span
+                                className="px-1.5 fw-semibold"
+                                style={{ minWidth: "22px", fontSize: "12.5px", textAlign: "center" }}
+                              >
+                                {item.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold"
+                                onClick={() =>
+                                  updateQuantity(
+                                    productId,
+                                    (item.quantity || 1) + 1,
+                                  )
+                                }
+                              >
+                                &#43;
+                              </button>
+                            </div>
+
+                            <div className="fw-bold" style={{ color: "#1e3a8a", fontSize: "14px" }}>
+                              {formatPrice(itemTotal)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Table Footer actions */}

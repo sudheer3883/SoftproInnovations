@@ -3,224 +3,204 @@ import logo from "../assets/logoone.png";
 
 const Footer = () => {
   return (
-    <footer
-      className="footer-section text-white pt-5 pb-4"
-      style={{
-        background:
-          "linear-gradient(135deg, #0b1d3d 0%, #123a73 28%, #1d4f9a 58%, #ff8c42 120%)",
-      }}
-    >
-      <div className="container">
-        {/* Main Footer Links Grid */}
-        <div className="row g-4 pb-5 border-bottom border-secondary border-opacity-25">
-          {/* Column 1: Brand Info */}
-          <div className="col-12 col-lg-3 me-auto">
-            <a
-              href="#"
-              className="d-flex align-items-center text-decoration-none mb-3"
+    <footer className="spi-footer text-white">
+      <div className="container py-5">
+        <div className="row g-4 justify-content-between">
+          {/* Column 1: Brand Info & Quick Contact */}
+          <div className="col-12 col-lg-4 pe-lg-4">
+            <Link
+              to="/"
+              className="d-inline-flex align-items-center text-decoration-none mb-3"
             >
               <img
                 src={logo}
                 alt="SPI Logo"
-                width="40"
+                width="36"
+                height="36"
                 className="me-2"
                 style={{
                   objectFit: "contain",
                   padding: "3px",
-                  borderRadius: "6px",
+                  borderRadius: "7px",
                   backgroundColor: "#1e3a8a",
-                  mixBlendMode: "screen",
                 }}
               />
               <span
-                className="fs-4 fw-bold text-white"
-                style={{ fontFamily: "Georgia, serif" }}
+                className="fs-4 fw-bold text-white tracking-tight"
+                style={{ fontFamily: "'Inter', sans-serif" }}
               >
-                Softpro<span style={{ color: "#3945E0" }}>Innovation</span>
+                Softpro<span style={{ color: "#ff6b35" }}>Innovation</span>
               </span>
-            </a>
-            <p
-              className="footer-text mb-4"
-              style={{
-                color: "rgba(255, 255, 255, 0.8)",
-                fontSize: "14px",
-                lineHeight: "1.7",
-                letterSpacing: "0.01em",
-              }}
-            >
-              Your trusted source for microcontrollers, single board computers,
-              and electronics components in India.
+            </Link>
+            <p className="spi-footer-tagline mb-3">
+              India&apos;s trusted platform for genuine development boards, microcontrollers,
+              sensors, and robotics components with fast dispatch and reliable support.
             </p>
+
+            <div className="spi-footer-contact-items mb-3">
+              <div className="d-flex align-items-center gap-2 mb-2 text-white-50 small">
+                <i className="bi bi-geo-alt-fill text-warning"></i>
+                <span>Jankipuram, Kursi Road, Lucknow - 226021</span>
+              </div>
+              <div className="d-flex align-items-center gap-3 text-white-50 small flex-wrap">
+                <a
+                  href="tel:+918299403883"
+                  className="text-white-50 text-decoration-none hover-white d-inline-flex align-items-center gap-1.5"
+                >
+                  <i className="bi bi-telephone-fill text-warning"></i> +91 8299403883
+                </a>
+                <span className="opacity-25">&bull;</span>
+                <a
+                  href="mailto:rsk205096@gmail.com"
+                  className="text-white-50 text-decoration-none hover-white d-inline-flex align-items-center gap-1.5"
+                >
+                  <i className="bi bi-envelope-fill text-warning"></i> rsk205096@gmail.com
+                </a>
+              </div>
+            </div>
+
             {/* Social Icons */}
-            <div className="d-flex gap-2">
-              <a href="#" className="footer-social-btn" aria-label="Facebook">
+            <div className="d-flex gap-2 pt-1">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                className="spi-social-icon"
+                aria-label="Facebook"
+              >
                 <i className="bi bi-facebook"></i>
               </a>
-              <a href="#" className="footer-social-btn" aria-label="Twitter">
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noreferrer"
+                className="spi-social-icon"
+                aria-label="Twitter"
+              >
                 <i className="bi bi-twitter-x"></i>
               </a>
-              <a href="#" className="footer-social-btn" aria-label="Instagram">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                className="spi-social-icon"
+                aria-label="Instagram"
+              >
                 <i className="bi bi-instagram"></i>
               </a>
-              <a href="#" className="footer-social-btn" aria-label="YouTube">
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noreferrer"
+                className="spi-social-icon"
+                aria-label="YouTube"
+              >
                 <i className="bi bi-youtube"></i>
               </a>
-              <a href="#" className="footer-social-btn" aria-label="LinkedIn">
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noreferrer"
+                className="spi-social-icon"
+                aria-label="LinkedIn"
+              >
                 <i className="bi bi-linkedin"></i>
               </a>
             </div>
           </div>
 
-          {/* Column 2: Quick Links */}
-          <div className="col-6 col-sm-4 col-lg-2">
-            <h6 className="footer-heading text-uppercase mb-3">QUICK LINKS</h6>
-            <ul className="list-unstyled footer-links mb-0">
-              <li>
-                <a href="#">Home</a>
-              </li>
-              <li>
-                <a href="#">About Us</a>
-              </li>
-              <li>
-                <a href="#">Products</a>
-              </li>
-              <li>
-                <a href="#">Contact Us</a>
-              </li>
-            </ul>
-          </div>
+          {/* Links Grid: 3 Clean Columns (responsive 2-col on mobile, 3-col on desktop) */}
+          <div className="col-12 col-lg-8">
+            <div className="row g-4">
+              {/* Column 2: Quick Links */}
+              <div className="col-6 col-md-4">
+                <h6 className="spi-footer-heading">Quick Links</h6>
+                <ul className="list-unstyled spi-footer-links mb-0">
+                  <li>
+                    <Link to="/">Home</Link>
+                  </li>
+                  <li>
+                    <Link to="/about">About Us</Link>
+                  </li>
+                  <li>
+                    <Link to="/Product">All Products</Link>
+                  </li>
+                  <li>
+                    <Link to="/contact">Contact Us</Link>
+                  </li>
+                  <li>
+                    <Link to="/profile/orders">My Orders</Link>
+                  </li>
+                </ul>
+              </div>
 
-          {/* Column 3: Categories */}
-          <div className="col-6 col-sm-4 col-lg-2">
-            <h6 className="footer-heading text-uppercase mb-3">CATEGORIES</h6>
-            <ul className="list-unstyled footer-links mb-0">
-              <li>
-                <a href="#">Raspberry Pi</a>
-              </li>
-              <li>
-                <a href="#">Arduino</a>
-              </li>
-              <li>
-                <a href="#">ESP32 / ESP8266</a>
-              </li>
-              <li>
-                <a href="#">Sensors</a>
-              </li>
-              <li>
-                <a href="#">Displays</a>
-              </li>
-              <li>
-                <a href="#">Power Modules</a>
-              </li>
-            </ul>
-          </div>
+              {/* Column 3: Categories */}
+              <div className="col-6 col-md-4">
+                <h6 className="spi-footer-heading">Categories</h6>
+                <ul className="list-unstyled spi-footer-links mb-0">
+                  <li>
+                    <Link to="/Product">Arduino Boards</Link>
+                  </li>
+                  <li>
+                    <Link to="/Product">Raspberry Pi</Link>
+                  </li>
+                  <li>
+                    <Link to="/Product">ESP32 &amp; IoT</Link>
+                  </li>
+                  <li>
+                    <Link to="/Product">Sensors &amp; Modules</Link>
+                  </li>
+                  <li>
+                    <Link to="/Product">Motors &amp; Drivers</Link>
+                  </li>
+                </ul>
+              </div>
 
-          {/* Column 4: Support */}
-          <div className="col-6 col-sm-4 col-lg-2">
-            <h6 className="footer-heading text-uppercase mb-3">SUPPORT</h6>
-            <ul className="list-unstyled footer-links mb-0">
-              <li>
-                <a href="#">Privacy Policy</a>
-              </li>
-              <li>
-                <a href="#">Terms of Service</a>
-              </li>
-              <li>
-                <a href="#">Return Policy</a>
-              </li>
-              <li>
-                <a href="#">Shipping Info</a>
-              </li>
-              <li>
-                <a href="#">FAQs</a>
-              </li>
-              <li>
-                <a href="#">Track Order</a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 5: Get In Touch */}
-          <div className="col-12 col-sm-6 col-lg-3">
-            <h6 className="footer-heading text-uppercase mb-3">GET IN TOUCH</h6>
-            <ul className="list-unstyled footer-contact mb-0">
-              <li className="d-flex align-items-start mb-3">
-                <i className="bi bi-geo-alt-fill text-orangered me-2 mt-1 fs-6"></i>
-                <div
-                  style={{
-                    fontSize: "13.5px",
-                    color: "rgba(255, 255, 255, 0.75)",
-                    lineHeight: "1.5",
-                  }}
-                >
-                  <strong className="text-white d-block">Softpro House</strong>
-                  3/213, Sec-J, Jankipuram, Kursi Road
-                  <br />
-                  Near Gudamba Police Station
-                  <br />
-                  Lucknow - 226021
-                </div>
-              </li>
-              <li className="d-flex align-items-center mb-3">
-                <i className="bi bi-telephone-fill text-orangered me-2 fs-6"></i>
-                <a
-                  href="tel:+918299403883"
-                  className="text-decoration-none"
-                  style={{
-                    fontSize: "13.5px",
-                    color: "rgba(255, 255, 255, 0.75)",
-                  }}
-                >
-                  +91 8299403883
-                </a>
-              </li>
-              <li className="d-flex align-items-center mb-3">
-                <i className="bi bi-envelope-fill text-orangered me-2 fs-6"></i>
-                <a
-                  href="mailto:rsk205096@gmail.com"
-                  className="text-decoration-none"
-                  style={{
-                    fontSize: "13.5px",
-                    color: "rgba(255, 255, 255, 0.75)",
-                  }}
-                >
-                  rsk205096@gmail.com
-                </a>
-              </li>
-              <li className="d-flex align-items-center">
-                <i className="bi bi-clock-fill text-orangered me-2 fs-6"></i>
-                <span
-                  style={{
-                    fontSize: "13.5px",
-                    color: "rgba(255, 255, 255, 0.75)",
-                  }}
-                >
-                  Mon – Sat: 10:00 AM – 7:00 PM
-                </span>
-              </li>
-            </ul>
-            <Link
-              to="/admin/login"
-              className="d-inline-flex align-items-center gap-2 mt-3 text-decoration-none"
-              style={{ color: "#ff6b35", fontSize: "13px" }}
-            >
-              <i className="bi bi-shield-lock-fill"></i> Admin Login
-            </Link>
+              {/* Column 4: Help & Policies */}
+              <div className="col-12 col-md-4">
+                <h6 className="spi-footer-heading">Help &amp; Policies</h6>
+                <ul className="list-unstyled spi-footer-links mb-0">
+                  <li>
+                    <Link to="/track-order">Track Order</Link>
+                  </li>
+                  <li>
+                    <Link to="/returns">Return &amp; Refund Policy</Link>
+                  </li>
+                  <li>
+                    <Link to="/support">Support Center</Link>
+                  </li>
+                  <li>
+                    <Link to="/b2b">Bulk &amp; Institutional Orders</Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/login"
+                      className="d-inline-flex align-items-center gap-1"
+                      style={{ color: "#ff8c5a" }}
+                    >
+                      <i className="bi bi-shield-lock"></i> Admin Portal
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Copyright Bar */}
-        <div
-          className="d-flex flex-column flex-md-row justify-content-between align-items-center pt-4"
-          style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.5)" }}
-        >
-          <p className="mb-2 mb-md-0">
-            &copy; 2026 SoftproInnovation. All rights reserved.
+        {/* Bottom Bar */}
+        <div className="spi-footer-bottom mt-4 pt-3 border-top border-white border-opacity-10 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+          <p className="mb-0 text-white-50 small text-center text-md-start">
+            &copy; 2026 <strong className="text-white">SoftproInnovation</strong>. All rights reserved.
           </p>
-          <p className="mb-0">
-            Design &amp; Development by Softpro India Computer Technology Pvt.
-            Ltd
-          </p>
+          <div className="d-flex align-items-center gap-3 text-white-50 small flex-wrap justify-content-center">
+            <span className="d-inline-flex align-items-center gap-1">
+              <i className="bi bi-shield-check text-success"></i> 100% Secure Checkout
+            </span>
+            <span className="opacity-25">&bull;</span>
+            <span className="d-inline-flex align-items-center gap-1">
+              <i className="bi bi-truck text-info"></i> Fast Pan-India Dispatch
+            </span>
+          </div>
         </div>
       </div>
     </footer>

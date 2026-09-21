@@ -55,32 +55,7 @@ const escapeHtml = (value) => String(value ?? "")
     .replace(/'/g, "&#039;");
 
 const sendOrderStatusEmail = async ({ email, orderId, status, order }) => {
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-        throw new Error("A valid customer email is required for order updates");
-    }
-
-    const customerName = escapeHtml(order?.customer?.name || order?.shippingAddress?.fullName || "there");
-    const safeOrderId = escapeHtml(orderId);
-    const statusLabel = status === "Placed" ? "Confirmed" : status;
-    const safeStatus = escapeHtml(statusLabel);
-    const orderDate = order?.createdAt
-        ? new Date(order.createdAt).toLocaleDateString("en-IN")
-        : new Date().toLocaleDateString("en-IN");
-    const paymentMethod = escapeHtml(order?.paymentMethod || "COD");
-    const paymentStatus = escapeHtml(order?.paymentStatus || "Pending");
-    const total = Number(order?.totalAmount || 0).toLocaleString("en-IN");
-    const items = Array.isArray(order?.items) ? order.items : [];
-    const itemRows = items.length
-        ? items.map((item) => `<tr><td style="padding:12px 10px;border-bottom:1px solid #edf1f6;color:#172033">${escapeHtml(item.name || "Product")}</td><td style="padding:12px 10px;border-bottom:1px solid #edf1f6;text-align:center;color:#52657e">${Number(item.quantity || 1)}</td><td style="padding:12px 10px;border-bottom:1px solid #edf1f6;text-align:right;color:#172033">₹${Number(item.price || 0).toLocaleString("en-IN")}</td></tr>`).join("")
-        : `<tr><td colspan="3" style="padding:12px 10px;color:#52657e">Order details are available in your account.</td></tr>`;
-
-    await getTransporter().sendMail({
-        from: `Softpro Innovation <${process.env.SMTP_USER}>`,
-        to: email,
-        subject: `Order ${statusLabel} - ${orderId} | SoftproInnovation`,
-        text: `Hi ${customerName}, your Softpro Innovation order ${orderId} is now ${statusLabel}. Order date: ${orderDate}. Payment: ${paymentMethod} (${paymentStatus}). Total: ₹${total}.`,
-        html: `<div style="margin:0;background:#f2f5f9;padding:24px 12px;font-family:Arial,sans-serif;color:#172033"><div style="max-width:620px;margin:auto;background:#fff;border:1px solid #e1e7ef;border-radius:10px;overflow:hidden"><div style="padding:28px 24px;background:linear-gradient(115deg,#06d9ea,#5a42f5 58%,#ff00c8);color:#fff;text-align:center"><h1 style="margin:0;font-size:24px;letter-spacing:-.4px">Order ${safeStatus} ✓</h1><p style="margin:9px 0 0;font-size:13px;opacity:.92">SoftproInnovation</p></div><div style="padding:26px 24px"><h2 style="margin:0 0 12px;font-size:20px;color:#172033">Hi ${customerName},</h2><p style="margin:0 0 20px;color:#52657e;line-height:1.6">Your order status has been updated. Here are your latest order details.</p><div style="display:flex;flex-wrap:wrap;background:#f7f9fc;border:1px solid #e8edf3;border-radius:8px;padding:14px 12px;margin-bottom:22px"><div style="width:50%;padding:5px 8px;color:#52657e;font-size:12px">ORDER ID<br><strong style="color:#172033;font-size:13px">${safeOrderId}</strong></div><div style="width:50%;padding:5px 8px;color:#52657e;font-size:12px">ORDER DATE<br><strong style="color:#172033;font-size:13px">${orderDate}</strong></div><div style="width:50%;padding:5px 8px;color:#52657e;font-size:12px">PAYMENT<br><strong style="color:#172033;font-size:13px;text-transform:capitalize">${paymentMethod} · ${paymentStatus}</strong></div><div style="width:50%;padding:5px 8px;color:#52657e;font-size:12px">TOTAL<br><strong style="color:#172033;font-size:13px">₹${total}</strong></div></div><h3 style="margin:0 0 10px;font-size:15px;color:#172033">Order Details</h3><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#eef4ff"><th style="padding:10px;text-align:left;color:#24466f">Product</th><th style="padding:10px;text-align:center;color:#24466f">Qty</th><th style="padding:10px;text-align:right;color:#24466f">Price</th></tr></thead><tbody>${itemRows}</tbody></table><a href="${process.env.CLIENT_URL || "http://localhost:5173"}/profile/orders" style="display:inline-block;margin-top:24px;padding:12px 20px;border-radius:6px;background:#315be8;color:#fff;text-decoration:none;font-weight:700;font-size:13px">View Orders</a><p style="margin:24px 0 0;color:#52657e;font-size:13px;line-height:1.6">Thank you for choosing Softpro Innovation.</p></div></div></div>`,
-    });
+    return sendOrderActivityEmail({ email, orderId, status, order });
 };
 
 const sendOrderActivityEmail = async ({ email, orderId, status, order }) => {
@@ -88,28 +63,105 @@ const sendOrderActivityEmail = async ({ email, orderId, status, order }) => {
         throw new Error("A valid customer email is required for order updates");
     }
 
-    const customerName = escapeHtml(order?.customer?.name || order?.shippingAddress?.fullName || "there");
+    const customerName = escapeHtml(order?.customer?.name || order?.shippingAddress?.fullName || "Valued Customer");
     const safeOrderId = escapeHtml(orderId);
     const statusLabel = status === "Placed" ? "Confirmed" : status;
     const safeStatus = escapeHtml(statusLabel);
     const orderDate = order?.createdAt
-        ? new Date(order.createdAt).toLocaleDateString("en-IN")
-        : new Date().toLocaleDateString("en-IN");
-    const paymentMethod = escapeHtml(order?.paymentMethod || "COD");
+        ? new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+        : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    const paymentMethod = escapeHtml(String(order?.paymentMethod || "COD").toUpperCase());
     const paymentStatus = escapeHtml(order?.paymentStatus || "Pending");
     const total = Number(order?.totalAmount || 0).toLocaleString("en-IN");
     const items = Array.isArray(order?.items) ? order.items : [];
+    const shippingAddress = order?.shippingAddress;
+    const addressStr = shippingAddress
+        ? escapeHtml([shippingAddress.fullName, shippingAddress.address, shippingAddress.landmark, shippingAddress.city, shippingAddress.state, shippingAddress.pincode].filter(Boolean).join(", "))
+        : "";
+
+    const statusBadgeColor = status === "Delivered" ? "#16a34a" : status === "Cancelled" ? "#dc2626" : status === "Shipped" ? "#2563eb" : "#f97316";
+
+    const subjectMap = {
+        Placed: `Order Confirmed: #${orderId} | Softpro Innovation`,
+        Confirmed: `Order Confirmed: #${orderId} | Softpro Innovation`,
+        Processing: `Order Processing: #${orderId} | Softpro Innovation`,
+        Shipped: `Order Shipped 🚚: #${orderId} | Softpro Innovation`,
+        Delivered: `Order Delivered 🎉: #${orderId} | Softpro Innovation`,
+        Cancelled: `Order Cancelled: #${orderId} | Softpro Innovation`,
+    };
+    const emailSubject = subjectMap[status] || `Order Update (${statusLabel}): #${orderId} | Softpro Innovation`;
+
     const itemRows = items.length
-        ? items.map((item) => `<tr><td style="padding:10px 8px;border-bottom:1px solid #e8edf3;color:#172033;word-break:break-word">${escapeHtml(item.name || "Product")}</td><td style="width:48px;padding:10px 8px;border-bottom:1px solid #e8edf3;text-align:center;color:#52657e">${Number(item.quantity || 1)}</td><td style="width:78px;padding:10px 8px;border-bottom:1px solid #e8edf3;text-align:right;color:#172033;white-space:nowrap">₹${Number(item.price || 0).toLocaleString("en-IN")}</td></tr>`).join("")
+        ? items.map((item) => `<tr><td style="padding:10px 8px;border-bottom:1px solid #e8edf3;color:#172033;word-break:break-word">${escapeHtml(item.name || "Product")}</td><td style="width:48px;padding:10px 8px;border-bottom:1px solid #e8edf3;text-align:center;color:#52657e">${Number(item.quantity || 1)}</td><td style="width:84px;padding:10px 8px;border-bottom:1px solid #e8edf3;text-align:right;color:#172033;white-space:nowrap">₹${Number(item.price || 0).toLocaleString("en-IN")}</td></tr>`).join("")
         : `<tr><td colspan="3" style="padding:10px 8px;color:#52657e">Order details are available in your account.</td></tr>`;
     const clientUrl = escapeHtml(process.env.CLIENT_URL || "http://localhost:5173");
 
     await getTransporter().sendMail({
         from: `Softpro Innovation <${process.env.SMTP_USER}>`,
         to: email,
-        subject: `Order ${statusLabel} - ${orderId} | SoftproInnovation`,
-        text: `Hi ${customerName}, your Softpro Innovation order ${orderId} is now ${statusLabel}. Order date: ${orderDate}. Payment: ${paymentMethod} (${paymentStatus}). Total: ₹${total}.`,
-        html: `<div style="margin:0;background:#f2f5f9;padding:16px 8px;font-family:Arial,sans-serif;color:#172033"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #e1e7ef;border-radius:10px;overflow:hidden"><tr><td style="padding:24px 18px;background:linear-gradient(115deg,#06d9ea,#5a42f5 58%,#ff00c8);color:#fff;text-align:center"><h1 style="margin:0;font-size:22px;line-height:1.25">Order ${safeStatus} ✓</h1><p style="margin:8px 0 0;font-size:12px">SoftproInnovation</p></td></tr><tr><td style="padding:22px 16px"><h2 style="margin:0 0 10px;font-size:19px;color:#172033">Hi ${customerName},</h2><p style="margin:0 0 18px;color:#52657e;line-height:1.55;font-size:14px">Your order status has been updated. Here are your latest order details.</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f9fc;border:1px solid #e8edf3;border-radius:8px;margin-bottom:20px"><tr><td width="50%" style="padding:10px 9px;color:#52657e;font-size:11px;vertical-align:top">ORDER ID<br><strong style="display:block;color:#172033;font-size:12px;line-height:1.35;word-break:break-word">${safeOrderId}</strong></td><td width="50%" style="padding:10px 9px;color:#52657e;font-size:11px;vertical-align:top">ORDER DATE<br><strong style="display:block;color:#172033;font-size:12px;line-height:1.35">${orderDate}</strong></td></tr><tr><td width="50%" style="padding:10px 9px;color:#52657e;font-size:11px;vertical-align:top">PAYMENT<br><strong style="display:block;color:#172033;font-size:12px;line-height:1.35;text-transform:capitalize;word-break:break-word">${paymentMethod} · ${paymentStatus}</strong></td><td width="50%" style="padding:10px 9px;color:#52657e;font-size:11px;vertical-align:top">TOTAL<br><strong style="display:block;color:#172033;font-size:12px;line-height:1.35;white-space:nowrap">₹${total}</strong></td></tr></table><h3 style="margin:0 0 9px;font-size:15px;color:#172033">Order Details</h3><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;table-layout:fixed;font-size:12px"><tr style="background:#eef4ff"><th style="padding:9px 8px;text-align:left;color:#24466f;font-weight:700">Product</th><th width="48" style="padding:9px 4px;text-align:center;color:#24466f;font-weight:700">Qty</th><th width="78" style="padding:9px 4px;text-align:right;color:#24466f;font-weight:700">Price</th></tr>${itemRows}</table><a href="${clientUrl}/profile/orders" style="display:inline-block;margin-top:21px;padding:11px 18px;border-radius:6px;background:#315be8;color:#fff;text-decoration:none;font-weight:700;font-size:12px">View Orders</a><p style="margin:22px 0 0;color:#52657e;font-size:12px;line-height:1.55">Thank you for choosing Softpro Innovation.</p></td></tr></table></div>`,
+        subject: emailSubject,
+        text: `Hi ${customerName}, your Softpro Innovation order #${orderId} is now ${statusLabel}. Date: ${orderDate}. Payment: ${paymentMethod} (${paymentStatus}). Total: ₹${total}. Track in your account: ${clientUrl}/profile/orders`,
+        html: `<div style="margin:0;background:#f3f6fa;padding:20px 10px;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.04)">
+  <tr>
+    <td style="padding:28px 24px;background:linear-gradient(135deg,#0b1e3b 0%,#1e3a8a 60%,#3b82f6 100%);color:#ffffff;text-align:center">
+      <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.3px">Softpro<span style="color:#ff6b35">Innovation</span></h2>
+      <div style="margin-top:10px;display:inline-block;padding:5px 14px;background:${statusBadgeColor};color:#ffffff;font-size:12px;font-weight:700;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase">
+        Order ${safeStatus}
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:26px 22px">
+      <h3 style="margin:0 0 8px;font-size:18px;color:#0f172a">Hi ${customerName},</h3>
+      <p style="margin:0 0 20px;color:#64748b;line-height:1.55;font-size:14px">
+        ${status === 'Cancelled' ? 'Your order has been cancelled.' : status === 'Delivered' ? 'Great news! Your order has been delivered successfully.' : status === 'Shipped' ? 'Your package has been dispatched and is on its way to you.' : 'Thank you for your order! Here are your latest order details.'}
+      </p>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:22px">
+        <tr>
+          <td width="50%" style="padding:10px 12px;color:#64748b;font-size:11px;vertical-align:top">
+            ORDER ID<br><strong style="display:block;color:#0f172a;font-size:13px;line-height:1.4;word-break:break-word">${safeOrderId}</strong>
+          </td>
+          <td width="50%" style="padding:10px 12px;color:#64748b;font-size:11px;vertical-align:top">
+            ORDER DATE<br><strong style="display:block;color:#0f172a;font-size:13px;line-height:1.4">${orderDate}</strong>
+          </td>
+        </tr>
+        <tr>
+          <td width="50%" style="padding:10px 12px;color:#64748b;font-size:11px;vertical-align:top">
+            PAYMENT<br><strong style="display:block;color:#0f172a;font-size:13px;line-height:1.4">${paymentMethod} (${paymentStatus})</strong>
+          </td>
+          <td width="50%" style="padding:10px 12px;color:#64748b;font-size:11px;vertical-align:top">
+            TOTAL AMOUNT<br><strong style="display:block;color:#1e3a8a;font-size:15px;line-height:1.4;font-weight:800">₹${total}</strong>
+          </td>
+        </tr>
+        ${addressStr ? `<tr><td colspan="2" style="padding:10px 12px;border-top:1px solid #edf2f7;color:#64748b;font-size:11px">DELIVERY ADDRESS<br><span style="display:block;color:#1e293b;font-size:12px;line-height:1.4">${addressStr}</span></td></tr>` : ''}
+      </table>
+
+      <h4 style="margin:0 0 10px;font-size:14px;color:#0f172a;text-transform:uppercase;letter-spacing:0.5px">Order Summary</h4>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;table-layout:fixed;font-size:12px">
+        <tr style="background:#eef2ff">
+          <th style="padding:9px 8px;text-align:left;color:#1e3a8a;font-weight:700">Product</th>
+          <th width="48" style="padding:9px 4px;text-align:center;color:#1e3a8a;font-weight:700">Qty</th>
+          <th width="84" style="padding:9px 4px;text-align:right;color:#1e3a8a;font-weight:700">Price</th>
+        </tr>
+        ${itemRows}
+      </table>
+
+      <div style="text-align:center;margin-top:24px">
+        <a href="${clientUrl}/profile/orders" style="display:inline-block;padding:12px 24px;border-radius:8px;background:#1e3a8a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:0.3px">
+          View & Track Orders
+        </a>
+      </div>
+
+      <p style="margin:26px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;text-align:center">
+        Questions? Contact us at <a href="mailto:rsk205096@gmail.com" style="color:#1e3a8a;text-decoration:none">rsk205096@gmail.com</a> or call +91 8299403883.<br>
+        Thank you for choosing Softpro Innovation.
+      </p>
+    </td>
+  </tr>
+</table>
+</div>`,
     });
 };
 
@@ -118,12 +170,18 @@ const sendPaymentStatusEmail = async ({ email, orderId, paymentStatus }) => {
         throw new Error("A valid customer email is required for payment updates");
     }
 
+    const safeOrderId = escapeHtml(orderId);
+    const safeStatus = escapeHtml(paymentStatus);
     await getTransporter().sendMail({
         from: `Softpro Innovation <${process.env.SMTP_USER}>`,
         to: email,
-        subject: `Payment ${paymentStatus} for order ${orderId}`,
-        text: `Payment for your Softpro Innovation order ${orderId} is ${paymentStatus}.`,
-        html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#172033"><h2>Payment update</h2><p>Payment for order <strong>${orderId}</strong> is now <strong>${paymentStatus}</strong>.</p><p>Softpro Innovation</p></div>`,
+        subject: `Payment ${paymentStatus}: Order #${orderId} | Softpro Innovation`,
+        text: `Payment for your Softpro Innovation order #${orderId} is now ${paymentStatus}.`,
+        html: `<div style="margin:0;background:#f3f6fa;padding:24px 12px;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+  <tr><td style="background:#1e3a8a;padding:20px;color:#fff;text-align:center"><h2 style="margin:0;font-size:20px">Payment ${safeStatus}</h2></td></tr>
+  <tr><td style="padding:22px"><p style="margin:0 0 12px;font-size:14px;color:#334155">Payment for order <strong>#${safeOrderId}</strong> has been updated to <strong>${safeStatus}</strong>.</p><p style="margin:0;font-size:13px;color:#64748b">Softpro Innovation</p></td></tr>
+</table></div>`,
     });
 };
 
@@ -134,12 +192,57 @@ const sendWelcomeEmail = async ({ email, name }) => {
 
     const displayName = escapeHtml(String(name || "there").trim() || "there");
     const safeEmail = escapeHtml(email);
+    const clientUrl = escapeHtml(process.env.CLIENT_URL || "http://localhost:5173");
+
     await getTransporter().sendMail({
         from: `Softpro Innovation <${process.env.SMTP_USER}>`,
         to: email,
-        subject: "Welcome to Softpro Innovation",
-        text: `Welcome, ${displayName}! Thank you for registering with Softpro Innovation. Your account has been created successfully.`,
-        html: `<div style="margin:0;background:#f3f6fa;padding:28px 16px;font-family:Arial,sans-serif;color:#172033"><div style="max-width:560px;margin:auto;background:#fff;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden"><div style="background:#101827;padding:30px 24px;color:#fff"><h1 style="margin:0;font-size:25px;letter-spacing:-.4px">SoftproInnovation</h1><p style="margin:8px 0 0;color:#c7d2e2;font-size:13px">Your Shopping. Your Choice.</p></div><div style="padding:30px 24px"><h2 style="margin:0 0 16px;font-size:22px;color:#172033">Welcome, ${displayName}!</h2><p style="font-size:15px;line-height:1.7;color:#52657e">Thank you for registering with <strong style="color:#172033">Softpro Innovation</strong>. Your account has been created successfully.</p><p style="font-size:15px;line-height:1.7;color:#52657e">You can now explore our products, save your details, and track your orders from your account.</p><div style="margin-top:24px;padding:14px 16px;background:#f0f6ff;border-left:4px solid #2f6fed;color:#24466f;font-size:14px">Your registered email: <strong>${safeEmail}</strong></div><p style="margin:26px 0 0;color:#52657e;font-size:14px">Thank you for choosing Softpro Innovation.</p></div></div></div>`,
+        subject: "Welcome to Softpro Innovation - Your Account is Ready!",
+        text: `Welcome, ${displayName}! Thank you for registering with Softpro Innovation. Your account (${email}) has been created successfully. Explore electronics, microcontrollers & robotics at ${clientUrl}/Product`,
+        html: `<div style="margin:0;background:#f3f6fa;padding:28px 12px;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.04)">
+  <tr>
+    <td style="padding:28px 24px;background:linear-gradient(135deg,#0b1e3b 0%,#1e3a8a 60%,#ff6b35 120%);color:#ffffff;text-align:center">
+      <h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.3px">Softpro<span style="color:#ffb28a">Innovation</span></h1>
+      <p style="margin:8px 0 0;font-size:13px;opacity:0.92">Your Trusted Partner in Electronics & Robotics</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:28px 24px">
+      <h2 style="margin:0 0 12px;font-size:20px;color:#0f172a">Welcome, ${displayName}! 🎉</h2>
+      <p style="font-size:14px;line-height:1.65;color:#475569;margin:0 0 16px">
+        Thank you for joining <strong>Softpro Innovation</strong>. Your account has been created successfully and is ready to use.
+      </p>
+
+      <div style="background:#f8fafc;border-left:4px solid #1e3a8a;border-radius:6px;padding:14px 16px;margin:18px 0 22px">
+        <div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700">Registered Email</div>
+        <div style="font-size:14px;color:#0f172a;font-weight:600;margin-top:2px">${safeEmail}</div>
+      </div>
+
+      <div style="background:#f1f5f9;border-radius:8px;padding:16px;margin-bottom:24px">
+        <h4 style="margin:0 0 10px;font-size:13px;color:#1e3a8a;text-transform:uppercase;letter-spacing:0.5px">Why build with us?</h4>
+        <ul style="margin:0;padding-left:18px;color:#475569;font-size:13px;line-height:1.7">
+          <li>100% Genuine Microcontrollers, SBCs & Sensors (Raspberry Pi, Arduino, ESP32)</li>
+          <li>Same-day dispatch guarantee on popular components</li>
+          <li>Easy order tracking and verified invoice downloads</li>
+          <li>Dedicated engineering & customer support</li>
+        </ul>
+      </div>
+
+      <div style="text-align:center;margin:26px 0 16px">
+        <a href="${clientUrl}/Product" style="display:inline-block;padding:12px 24px;background:#ff6b35;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:8px;box-shadow:0 3px 8px rgba(255,107,53,0.3)">
+          Explore Products Now
+        </a>
+      </div>
+
+      <p style="margin:26px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;text-align:center;border-top:1px solid #f1f5f9;padding-top:20px">
+        Need assistance? Email us at <a href="mailto:rsk205096@gmail.com" style="color:#1e3a8a;text-decoration:none">rsk205096@gmail.com</a> or call +91 8299403883.<br>
+        &copy; 2026 Softpro Innovation. All rights reserved.
+      </p>
+    </td>
+  </tr>
+</table>
+</div>`,
     });
 };
 
@@ -148,12 +251,43 @@ const sendPasswordResetOtp = async ({ email, otp }) => {
         throw new Error("A valid customer email is required for password reset");
     }
 
+    const safeOtp = escapeHtml(otp);
     const info = await getTransporter().sendMail({
         from: `Softpro Innovation <${process.env.SMTP_USER}>`,
         to: email,
-        subject: "Your Softpro Innovation password reset OTP",
-        text: `Your password reset OTP is ${otp}. It is valid for 10 minutes. Do not share it with anyone.`,
-        html: `<div style="margin:0;background:#f3f6fa;padding:28px 16px;font-family:Arial,sans-serif;color:#172033"><div style="max-width:560px;margin:auto;background:#fff;border:1px solid #e3e8ef;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(110deg,#173b91,#3945e0);padding:26px 24px;color:#fff"><h1 style="margin:0;font-size:24px">SoftproInnovation</h1><p style="margin:8px 0 0;color:#dbe7ff;font-size:13px">Password reset verification</p></div><div style="padding:28px 24px"><h2 style="margin:0 0 12px;font-size:21px">Reset your password</h2><p style="color:#52657e;line-height:1.6">Use this one-time password to continue:</p><p style="margin:22px 0;text-align:center;font-size:34px;letter-spacing:8px;font-weight:800;color:#f97316">${otp}</p><p style="color:#52657e;font-size:13px">This OTP expires in 10 minutes. If you did not request this, you can ignore this email.</p></div></div></div>`,
+        subject: `Your Password Reset OTP: ${otp} | Softpro Innovation`,
+        text: `Your Softpro Innovation password reset OTP is: ${otp}. It is valid for 10 minutes. Do not share this OTP with anyone.`,
+        html: `<div style="margin:0;background:#f3f6fa;padding:26px 12px;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.04)">
+  <tr>
+    <td style="padding:24px 20px;background:linear-gradient(135deg,#0b1e3b 0%,#1e3a8a 100%);color:#ffffff;text-align:center">
+      <h2 style="margin:0;font-size:22px;font-weight:700">Softpro<span style="color:#ff6b35">Innovation</span></h2>
+      <p style="margin:6px 0 0;font-size:12px;opacity:0.9">Account Security & Password Recovery</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:26px 22px;text-align:center">
+      <h3 style="margin:0 0 10px;font-size:18px;color:#0f172a">Password Reset Verification</h3>
+      <p style="margin:0 0 20px;color:#64748b;font-size:14px;line-height:1.55">
+        We received a request to reset your password. Use the 6-digit one-time password (OTP) below:
+      </p>
+
+      <div style="display:inline-block;margin:10px auto 20px;padding:14px 28px;background:#f8fafc;border:2px dashed #3b82f6;border-radius:10px">
+        <span style="font-size:34px;letter-spacing:8px;font-weight:800;color:#1e3a8a;font-family:monospace">${safeOtp}</span>
+      </div>
+
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px 14px;color:#9a3412;font-size:12.5px;text-align:left;line-height:1.5;margin-bottom:20px">
+        <strong>⚠️ Security Notice:</strong> This OTP is valid for <strong>10 minutes</strong>. Do NOT share this code with anyone, including customer support. If you did not request this, please ignore this email.
+      </div>
+
+      <p style="margin:20px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;border-top:1px solid #f1f5f9;padding-top:16px">
+        Softpro Innovation &middot; 3/213, Sec-J, Jankipuram, Lucknow - 226021<br>
+        Support: rsk205096@gmail.com | +91 8299403883
+      </p>
+    </td>
+  </tr>
+</table>
+</div>`,
     });
 
     return info.messageId;

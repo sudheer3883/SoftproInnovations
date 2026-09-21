@@ -45,20 +45,17 @@ const Register = () => {
       const response = await axios.post(`${API_BASE_URL}/api/user/register`, {
         name: fullName,
         mobile: mobileNumber,
-        email,
+        email: email.trim().toLowerCase(),
         password,
         picture,
       });
-      if (
-        response.data.msg !== "User Registered" ||
-        response.data.welcomeEmailSent !== true
-      ) {
+      if (response.data.msg !== "User Registered") {
         throw new Error(response.data.msg || "Unable to create account.");
       }
       navigate("/login", {
         state: {
           registrationMessage:
-            "Account created successfully. Welcome email sent to your registered email.",
+            "Account created successfully! A welcome email has been sent to your Gmail inbox.",
         },
       });
     } catch (err) {

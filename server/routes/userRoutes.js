@@ -87,7 +87,7 @@ Router.post("/register", async (req, res) => {
         const a = await findUserByEmail(normalizedEmail);
 
         if (a) {
-            return res.json({ msg: "User already Exist" });
+            return res.status(400).json({ msg: "An account already exists with this email address." });
         }
 
         const data = new User({
@@ -98,30 +98,37 @@ Router.post("/register", async (req, res) => {
             status: status || 'active',
             gender: gender || 'unspecified',
             picture: picture || ''
-
         });
 
         await data.save();
 
+        let welcomeEmailSent = false;
         try {
             await sendWelcomeEmail({
                 email: normalizedEmail,
                 name: data.name,
             });
+            welcomeEmailSent = true;
+            console.log(`Welcome email sent to ${normalizedEmail}`);
         } catch (emailError) {
-            console.error("Welcome email failed:", emailError.message);
-            await User.findByIdAndDelete(data._id);
-            return res.status(503).json({
-                msg: "Account email could not be sent. Please try again after SMTP is configured.",
-            });
+            console.error("Welcome email notice:", emailError.message);
+            // User is still saved; welcome email error does not invalidate user
+            welcomeEmailSent = false;
         }
 
-        return res.status(201).json({ msg: "User Registered", welcomeEmailSent: true });
+        return res.status(201).json({
+            msg: "User Registered",
+            welcomeEmailSent,
+            user: {
+                id: data._id,
+                name: data.name,
+                email: data.email,
+            }
+        });
 
     } catch (er) {
-
-        return res.json({ msg: "Server Error" });
-
+        console.error("Registration error:", er);
+        return res.status(500).json({ msg: "Server Error. Please try again." });
     }
 
 });
@@ -135,7 +142,7 @@ Router.post("/forgot-password/request", async (req, res) => {
 
         const user = await findUserByEmail(email);
         if (!user) {
-            return res.status(404).json({ msg: "This email address is not registered. Please use the email added to your account." });
+            return res.status(404).json({ msg: "This email address is not registered. Please enter the email added to your account." });
         }
 
         const otp = createOtp();
@@ -158,10 +165,13 @@ Router.post("/forgot-password/request", async (req, res) => {
         }
 
         console.log(`Password reset OTP sent to ${email} (${messageId})`);
-        return res.json({ msg: "If an account exists, an OTP has been sent to that email." });
+        return res.json({
+            msg: "A 6-digit OTP has been sent to your registered Gmail address.",
+            email: deliveryEmail,
+        });
     } catch (error) {
         console.error("Password reset OTP failed:", error.message);
-        return res.status(503).json({ msg: "Unable to send OTP. Please check email service configuration and try again." });
+        return res.status(503).json({ msg: "Unable to send OTP email right now. Please try again in a moment." });
     }
 });
 

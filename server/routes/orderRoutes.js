@@ -113,14 +113,94 @@ Router.get('/all', requireAdmin, async (req, res) => {
     }
 });
 
-// Get orders by userId
+// Get orders by userId or customer email
 Router.get('/user/:userId', async (req, res) => {
     try {
-        const orders = await Order.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+        const identifier = String(req.params.userId || '').trim();
+        const orders = await Order.find({
+            $or: [
+                { userId: identifier },
+                { 'customer.email': identifier.toLowerCase() },
+                { 'shippingAddress.mobile': identifier }
+            ]
+        }).sort({ createdAt: -1 });
         return res.json(orders);
     } catch (err) {
         console.error('Failed to fetch user orders:', err);
         return res.status(500).json({ message: 'Failed to fetch user orders' });
+    }
+});
+
+// Customer Cancel Order endpoint
+Router.patch('/cancel/:id', async (req, res) => {
+    try {
+        const identifier = req.params.id;
+        let order = null;
+        if (identifier.startsWith('SPI-')) {
+            order = await Order.findOne({ orderId: identifier });
+        } else {
+            order = await Order.findById(identifier);
+        }
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        if (order.orderStatus === 'Delivered') {
+            return res.status(409).json({ message: 'Delivered orders cannot be cancelled.' });
+        }
+        if (order.orderStatus === 'Cancelled') {
+            return res.status(409).json({ message: 'Order is already cancelled.' });
+        }
+
+        order.orderStatus = 'Cancelled';
+        if (order.paymentStatus !== 'Completed') {
+            order.paymentStatus = 'Cancelled';
+        }
+        await order.save();
+
+        // Restore stock
+        try {
+            if (Array.isArray(order.items)) {
+                for (const item of order.items) {
+                    const prodId = item.productId || item.id || item._id;
+                    if (prodId && !String(prodId).startsWith('catalog-')) {
+                        await Product.findByIdAndUpdate(prodId, {
+                            $inc: { stock: Number(item.quantity || 1) }
+                        });
+                    }
+                }
+            }
+        } catch (stockErr) {
+            console.error('Stock restoration notice:', stockErr.message);
+        }
+
+        // Send order cancellation email to customer
+        let statusEmailSent = false;
+        try {
+            const customerEmail = String(order.customer?.email || '').trim().toLowerCase();
+            if (customerEmail) {
+                await sendOrderActivityEmail({
+                    email: customerEmail,
+                    orderId: order.orderId,
+                    status: 'Cancelled',
+                    order
+                });
+                statusEmailSent = true;
+                console.log(`Cancellation email sent for order ${order.orderId} to ${customerEmail}`);
+            }
+        } catch (emailErr) {
+            console.error('Cancellation email notice:', emailErr.message);
+        }
+
+        return res.json({
+            message: 'Order cancelled successfully. A confirmation email has been sent.',
+            order,
+            statusEmailSent
+        });
+    } catch (err) {
+        console.error('Error cancelling order:', err);
+        return res.status(500).json({ message: err.message || 'Failed to cancel order' });
     }
 });
 
