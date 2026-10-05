@@ -31,6 +31,6 @@ https://softpro-innovations-dri6.vercel.app/
 ⚡ **Stack:** MERN
 🎯 **Focus:** Full-Stack Web Development
 
-This project is an important milestone in my **MERN Stack learning journey**, and I’m continuously improving my skills by building real-world projects. 🚀
+This project is an important milestone in my **MERN Stack learning journey**, and I’m continuously improving my skills by building real-world projects 🚀
 
 #MERN #MERNStack #ECommerce #FullStackDevelopment #ReactJS #NodeJS #ExpressJS #MongoDB #JavaScript #WebDevelopment #FullStackDeveloper #EcommerceWebsite #SoftwareDevelopment #LearningJourney #SoftproInnovations
