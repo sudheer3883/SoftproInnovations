@@ -1,44 +1,43 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-
     name: {
         type: String,
-        require: true
+        required: true,
+        trim: true
     },
-
     email: {
         type: String,
-        require: true
+        required: true,
+        trim: true,
+        lowercase: true
     },
-
     password: {
         type: String,
-        require: true
-    },
-    mobile:{
-          type: String,
-        require: true
-    },
-    status:{
-          type: String,
-       enum:['active','inactive','delete']
-    },
-   
-picture:{
-    type:String,
-   
-},
-gender:{
-      type: String,
         required: true
-},
-resetOtpHash: String,
-resetOtpExpires: Date,
-resetOtpAttempts: { type: Number, default: 0 },
-
-},{
-    timestamps:true
+    },
+    mobile: {
+        type: String,
+        default: 'Not provided'
+    },
+    status: {
+        type: String,
+        enum: ['active', 'inactive', 'delete'],
+        default: 'active'
+    },
+    picture: {
+        type: String,
+        default: ''
+    },
+    gender: {
+        type: String,
+        default: 'unspecified'
+    },
+    resetOtpHash: String,
+    resetOtpExpires: Date,
+    resetOtpAttempts: { type: Number, default: 0 },
+}, {
+    timestamps: true
 });
 
 const user = mongoose.model("User", UserSchema);

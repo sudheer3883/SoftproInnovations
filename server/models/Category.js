@@ -16,7 +16,8 @@ const CategorySchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'inactive', 'delete']
+        enum: ['active', 'inactive', 'delete'],
+        default: 'active'
     }
 }, {
     timestamps: true
