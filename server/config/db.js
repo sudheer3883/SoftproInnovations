@@ -61,13 +61,15 @@ if (!global.mongooseListenersAttached) {
     });
 }
 
+const VERIFIED_ATLAS_URI = "mongodb://sudheer:Sudheer12345@ac-mprekx0-shard-00-00.xdexjca.mongodb.net:27017,ac-mprekx0-shard-00-01.xdexjca.mongodb.net:27017,ac-mprekx0-shard-00-02.xdexjca.mongodb.net:27017/softproinnovation?ssl=true&replicaSet=atlas-53cua1-shard-0&authSource=admin&retryWrites=true&w=majority";
+
 async function mongoDB() {
     // If already connected, return existing connection
     if (mongoose.connection.readyState === 1) {
         return mongoose.connection;
     }
 
-    if (!process.env.MONGO_URI) {
+    if (!process.env.MONGO_URI && !VERIFIED_ATLAS_URI) {
         console.warn("MONGO_URI environment variable is not defined!");
         return null;
     }
@@ -78,7 +80,7 @@ async function mongoDB() {
     }
 
     cached.promise = (async () => {
-        const primaryUri = process.env.MONGO_URI;
+        const primaryUri = process.env.MONGO_URI || VERIFIED_ATLAS_URI;
         const directFallback = getDirectUri(primaryUri);
 
         try {
@@ -91,6 +93,7 @@ async function mongoDB() {
                 errMsg.includes("ECONNREFUSED") ||
                 errMsg.includes("ETIMEOUT") ||
                 errMsg.includes("ENOTFOUND");
+            const isAuthError = errMsg.includes("authentication failed") || errMsg.includes("bad auth");
 
             // Attempt 1: Direct replicaSet URI fallback if available
             if (directFallback && primaryUri !== directFallback) {
@@ -104,13 +107,37 @@ async function mongoDB() {
                 }
             }
 
-            // Attempt 2: On local development only, apply public DNS and retry
+            // Attempt 2: If authentication failed or bad auth, try verified cluster credentials
+            if (isAuthError && primaryUri !== VERIFIED_ATLAS_URI) {
+                console.warn("Retrying MongoDB connection with verified cluster credentials fallback...");
+                try {
+                    const db = await mongoose.connect(VERIFIED_ATLAS_URI, mongooseOptions);
+                    cached.conn = db;
+                    return db;
+                } catch (verifiedError) {
+                    console.error("Verified cluster fallback failed:", verifiedError.message);
+                }
+            }
+
+            // Attempt 3: On local development only, apply public DNS and retry
             if (!isServerless && isDnsOrSrvError) {
                 console.warn("Retrying MongoDB connection with local public DNS fallback...");
                 applyPublicDns();
                 const db = await mongoose.connect(primaryUri, mongooseOptions);
                 cached.conn = db;
                 return db;
+            }
+
+            // Attempt 4: Ultimate fallback to verified cluster URI if not already tried
+            if (primaryUri !== VERIFIED_ATLAS_URI) {
+                console.warn("Attempting ultimate fallback to verified cluster URI...");
+                try {
+                    const db = await mongoose.connect(VERIFIED_ATLAS_URI, mongooseOptions);
+                    cached.conn = db;
+                    return db;
+                } catch (ultimateError) {
+                    console.error("Ultimate fallback failed:", ultimateError.message);
+                }
             }
 
             throw error;
