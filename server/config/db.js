@@ -18,13 +18,26 @@ const applyPublicDns = () => {
     } catch (e) {}
 };
 
+// Ensures database name softproinnovation is always targeted even if trailing slash is used
+function normalizeMongoUri(uri = "") {
+    if (!uri || typeof uri !== "string") return uri;
+    let s = uri.trim();
+    if (/cluster0\.xdexjca\.mongodb\.net\/?(\?.*)?$/.test(s)) {
+        s = s.replace(/cluster0\.xdexjca\.mongodb\.net\/?(\?.*)?$/, (m, q) => {
+            return `cluster0.xdexjca.mongodb.net/softproinnovation${q || "?retryWrites=true&w=majority"}`;
+        });
+    }
+    return s;
+}
+
 // Automatic fallback: convert cluster0.xdexjca.mongodb.net SRV URI to direct replicaSet hosts
 function getDirectUri(srvUri = "") {
     if (!srvUri) return null;
-    const match = srvUri.match(/^mongodb\+srv:\/\/([^@]+)@cluster0\.xdexjca\.mongodb\.net\/([^?]+)(\?.*)?$/);
+    const normalized = normalizeMongoUri(srvUri);
+    const match = normalized.match(/^mongodb\+srv:\/\/([^@]+)@cluster0\.xdexjca\.mongodb\.net\/([^?]+)(\?.*)?$/);
     if (match) {
         const credentials = match[1];
-        const dbName = match[2];
+        const dbName = match[2] || "softproinnovation";
         return `mongodb://${credentials}@ac-mprekx0-shard-00-00.xdexjca.mongodb.net:27017,ac-mprekx0-shard-00-01.xdexjca.mongodb.net:27017,ac-mprekx0-shard-00-02.xdexjca.mongodb.net:27017/${dbName}?ssl=true&replicaSet=atlas-53cua1-shard-0&authSource=admin&retryWrites=true&w=majority`;
     }
     return null;
@@ -80,7 +93,7 @@ async function mongoDB() {
     }
 
     cached.promise = (async () => {
-        const primaryUri = process.env.MONGO_URI || VERIFIED_ATLAS_URI;
+        const primaryUri = normalizeMongoUri(process.env.MONGO_URI || VERIFIED_ATLAS_URI);
         const directFallback = getDirectUri(primaryUri);
 
         try {
