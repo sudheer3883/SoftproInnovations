@@ -33,7 +33,35 @@ const Register = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = () => setPicture(reader.result);
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSize = 320;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const optimizedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        setPicture(optimizedDataUrl);
+      };
+      img.src = reader.result;
+    };
     reader.readAsDataURL(file);
   };
 
@@ -43,8 +71,8 @@ const Register = () => {
     setIsSubmitting(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/api/user/register`, {
-        name: fullName,
-        mobile: mobileNumber,
+        name: fullName.trim(),
+        mobile: mobileNumber.trim(),
         email: email.trim().toLowerCase(),
         password,
         picture,

@@ -17,18 +17,34 @@ const getTransporter = () => {
         throw new Error("Gmail SMTP is not configured. Add SMTP_USER and a Gmail App Password as SMTP_PASS in server/.env.");
     }
 
-    transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.gmail.com",
-        port: Number(process.env.SMTP_PORT || 465),
-        secure: String(process.env.SMTP_SECURE || "true") === "true",
-        auth: {
-            user: smtpUser,
-            pass: smtpPassword,
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
-    });
+    const host = process.env.SMTP_HOST || "smtp.gmail.com";
+    const isGmail = host.toLowerCase().includes("gmail");
+
+    if (isGmail) {
+        transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: smtpUser,
+                pass: smtpPassword,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
+        });
+    } else {
+        transporter = nodemailer.createTransport({
+            host: host,
+            port: Number(process.env.SMTP_PORT || 465),
+            secure: String(process.env.SMTP_SECURE || "true") === "true",
+            auth: {
+                user: smtpUser,
+                pass: smtpPassword,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
+        });
+    }
 
     return transporter;
 };

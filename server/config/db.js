@@ -1,22 +1,34 @@
 const mongoose = require("mongoose");
 const dns = require("dns");
 
-// Set IPv4 preference to avoid IPv6 timeouts
+// Set IPv4 preference to avoid IPv6 timeouts when supported
 try {
     if (dns.setDefaultResultOrder) {
         dns.setDefaultResultOrder("ipv4first");
     }
 } catch (e) {}
 
-// Apply reliable public DNS fallback for MongoDB Atlas SRV lookups
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+// Apply public DNS only for local development if needed, NEVER on serverless (Vercel)
 const applyPublicDns = () => {
+    if (isServerless) return;
     try {
         dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4", "1.0.0.1"]);
     } catch (e) {}
 };
 
-// Apply custom DNS on non-serverless or local environments
-applyPublicDns();
+// Automatic fallback: convert cluster0.xdexjca.mongodb.net SRV URI to direct replicaSet hosts
+function getDirectUri(srvUri = "") {
+    if (!srvUri) return null;
+    const match = srvUri.match(/^mongodb\+srv:\/\/([^@]+)@cluster0\.xdexjca\.mongodb\.net\/([^?]+)(\?.*)?$/);
+    if (match) {
+        const credentials = match[1];
+        const dbName = match[2];
+        return `mongodb://${credentials}@ac-mprekx0-shard-00-00.xdexjca.mongodb.net:27017,ac-mprekx0-shard-00-01.xdexjca.mongodb.net:27017,ac-mprekx0-shard-00-02.xdexjca.mongodb.net:27017/${dbName}?ssl=true&replicaSet=atlas-53cua1-shard-0&authSource=admin&retryWrites=true&w=majority`;
+    }
+    return null;
+}
 
 let cached = global.mongooseCache;
 if (!cached) {
@@ -25,11 +37,10 @@ if (!cached) {
 
 // Connection options optimized for stability & serverless
 const mongooseOptions = {
-    serverSelectionTimeoutMS: 15000,
-    connectTimeoutMS: 15000,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 8000,
     socketTimeoutMS: 45000,
     maxPoolSize: 10,
-    minPoolSize: 2,
 };
 
 // Monitor connection events once
@@ -67,20 +78,41 @@ async function mongoDB() {
     }
 
     cached.promise = (async () => {
+        const primaryUri = process.env.MONGO_URI;
+        const directFallback = getDirectUri(primaryUri);
+
         try {
-            const db = await mongoose.connect(process.env.MONGO_URI, mongooseOptions);
+            const db = await mongoose.connect(primaryUri, mongooseOptions);
             cached.conn = db;
             return db;
         } catch (error) {
-            // If DNS SRV query failed, force public DNS and retry once
             const errMsg = String(error.message || "");
-            if (errMsg.includes("querySrv") || errMsg.includes("ECONNREFUSED") || errMsg.includes("ETIMEOUT")) {
-                console.warn("Retrying MongoDB connection with public DNS fallback...");
+            const isDnsOrSrvError = errMsg.includes("querySrv") ||
+                errMsg.includes("ECONNREFUSED") ||
+                errMsg.includes("ETIMEOUT") ||
+                errMsg.includes("ENOTFOUND");
+
+            // Attempt 1: Direct replicaSet URI fallback if available
+            if (directFallback && primaryUri !== directFallback) {
+                console.warn("Retrying MongoDB connection with direct replicaSet URI fallback...");
+                try {
+                    const db = await mongoose.connect(directFallback, mongooseOptions);
+                    cached.conn = db;
+                    return db;
+                } catch (fallbackError) {
+                    console.error("Direct fallback failed:", fallbackError.message);
+                }
+            }
+
+            // Attempt 2: On local development only, apply public DNS and retry
+            if (!isServerless && isDnsOrSrvError) {
+                console.warn("Retrying MongoDB connection with local public DNS fallback...");
                 applyPublicDns();
-                const db = await mongoose.connect(process.env.MONGO_URI, mongooseOptions);
+                const db = await mongoose.connect(primaryUri, mongooseOptions);
                 cached.conn = db;
                 return db;
             }
+
             throw error;
         }
     })()
@@ -90,7 +122,7 @@ async function mongoDB() {
         .catch((error) => {
             cached.promise = null;
             cached.conn = null;
-            console.error("Database is not Connected:", error.message);
+            console.error("Database connection failed:", error.message);
             throw error;
         });
 

@@ -27,8 +27,9 @@ const Login = () => {
     setError("");
     setIsSubmitting(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       const response = await axios.post(`${API_BASE_URL}/api/user/login`, {
-        email,
+        email: normalizedEmail,
         password,
       });
       if (response.data.msg !== "Success") {

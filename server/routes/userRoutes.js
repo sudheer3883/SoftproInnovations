@@ -12,17 +12,27 @@ const normalizeEmail = (value = "") => String(value).trim().replace(/\s+/g, "").
 const findUserByEmail = async (value) => {
     const normalizedEmail = normalizeEmail(value);
     if (!normalizedEmail) return null;
-    return User.findOne({
-        email: {
-            $regex: `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
-            $options: "i",
-        },
-    });
+    // 1. Direct indexed match first for instant query speed
+    let user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+        // 2. Case-insensitive fallback
+        user = await User.findOne({
+            email: {
+                $regex: `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+                $options: "i",
+            },
+        });
+    }
+    return user;
 };
 
 Router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ msg: "Email and password are required" });
+        }
+
         const normalizedEmail = normalizeEmail(email);
         const user = await findUserByEmail(normalizedEmail);
 
@@ -38,10 +48,20 @@ Router.post("/login", async (req, res) => {
             return res.status(401).json({ msg: "Password is Incorrect" });
         }
 
+        // Migrate plain-text password to bcrypt hash seamlessly
+        if (!user.password?.startsWith("$2")) {
+            try {
+                user.password = await bcrypt.hash(password, 10);
+                await user.save();
+            } catch (hashErr) {
+                console.warn("Notice: could not auto-migrate password hash:", hashErr.message);
+            }
+        }
+
         const token = jwt.sign(
             { id: user._id, role: "user" },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
+            process.env.JWT_SECRET || "fallback_jwt_secret_softpro",
+            { expiresIn: "7d" }
         );
 
         return res.json({
@@ -57,8 +77,8 @@ Router.post("/login", async (req, res) => {
             createdAt: user.createdAt
         });
     } catch (er) {
-        console.log(er);
-        return res.status(500).json({ msg: "Server Error" });
+        console.error("Login route error:", er);
+        return res.status(500).json({ msg: "Server Error. Please try again." });
     }
 });
 
@@ -68,36 +88,45 @@ Router.get("/show", requireAdmin, async (req, res) => {
         const users = await User.find({}).select("-password").sort({ createdAt: -1 });
         return res.json(users);
     } catch (er) {
-        console.log(er);
+        console.error("Load users error:", er);
         return res.status(500).json({ msg: "Failed to load users" });
     }
 });
 
 Router.post("/register", async (req, res) => {
-
     try {
-
         const { name, fullName, email, password, mobile, mobileNumber, status, gender, picture } = req.body;
+        const displayName = String(name || fullName || "").trim();
 
-        if ((!name && !fullName) || !email || !password) {
+        if (!displayName || !email || !password) {
             return res.status(400).json({ msg: "Name, email and password are required" });
         }
 
-        const normalizedEmail = normalizeEmail(email);
-        const a = await findUserByEmail(normalizedEmail);
+        if (String(password).length < 4) {
+            return res.status(400).json({ msg: "Password must be at least 4 characters" });
+        }
 
-        if (a) {
+        const normalizedEmail = normalizeEmail(email);
+        const existing = await findUserByEmail(normalizedEmail);
+
+        if (existing) {
             return res.status(400).json({ msg: "An account already exists with this email address." });
         }
 
+        // Cap avatar image string to 1.5MB to protect database performance
+        let userPicture = picture || "";
+        if (typeof userPicture === "string" && userPicture.length > 2 * 1024 * 1024) {
+            userPicture = "";
+        }
+
         const data = new User({
-            name: name || fullName,
+            name: displayName,
             email: normalizedEmail,
             password: await bcrypt.hash(password, 10),
-            mobile: mobile || mobileNumber || 'Not provided',
-            status: status || 'active',
-            gender: gender || 'unspecified',
-            picture: picture || ''
+            mobile: mobile || mobileNumber || "Not provided",
+            status: status || "active",
+            gender: gender || "unspecified",
+            picture: userPicture
         });
 
         await data.save();
@@ -109,10 +138,9 @@ Router.post("/register", async (req, res) => {
                 name: data.name,
             });
             welcomeEmailSent = true;
-            console.log(`Welcome email sent to ${normalizedEmail}`);
+            console.log(`Welcome email successfully sent to ${normalizedEmail}`);
         } catch (emailError) {
             console.error("Welcome email notice:", emailError.message);
-            // User is still saved; welcome email error does not invalidate user
             welcomeEmailSent = false;
         }
 
@@ -130,7 +158,6 @@ Router.post("/register", async (req, res) => {
         console.error("Registration error:", er);
         return res.status(500).json({ msg: "Server Error. Please try again." });
     }
-
 });
 
 Router.post("/forgot-password/request", async (req, res) => {

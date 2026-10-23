@@ -12,14 +12,19 @@ const app = express();
 
 // ================= Middleware =================
 
-app.use(cors());
+app.use(cors({
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // Ensure DB is connected for serverless & regular requests
 app.use(async (req, res, next) => {
-    // Skip static/health routes
-    if (req.path === "/" || req.path === "/api/health") {
+    // Skip static/health routes and OPTIONS preflight requests
+    if (req.path === "/" || req.path === "/api/health" || req.method === "OPTIONS") {
         return next();
     }
 
@@ -52,13 +57,13 @@ app.get("/api/health", async (req, res) => {
 
     let dbState = states[mongoose.connection.readyState] || "unknown";
 
-    // Try connecting if disconnected
-    if (mongoose.connection.readyState === 0 && process.env.MONGO_URI) {
+    // Try connecting if disconnected or connecting
+    if (mongoose.connection.readyState !== 1 && process.env.MONGO_URI) {
         try {
             await mongoDB();
             dbState = states[mongoose.connection.readyState] || "connected";
         } catch (e) {
-            dbState = "connection_failed";
+            dbState = `connection_failed: ${e.message}`;
         }
     }
 
@@ -66,10 +71,11 @@ app.get("/api/health", async (req, res) => {
         server: "running",
         database: dbState,
         hasMongoUri: Boolean(process.env.MONGO_URI),
-        isLocalMongo: process.env.MONGO_URI
-            ? process.env.MONGO_URI.includes("localhost") || process.env.MONGO_URI.includes("127.0.0.1")
-            : false,
-        hasJwtSecret: Boolean(process.env.JWT_SECRET)
+        isDirectMongo: process.env.MONGO_URI ? process.env.MONGO_URI.startsWith("mongodb://") : false,
+        hasJwtSecret: Boolean(process.env.JWT_SECRET),
+        hasSmtpConfig: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
+        environment: process.env.VERCEL ? "vercel-serverless" : "local-server",
+        time: new Date().toISOString()
     });
 });
 

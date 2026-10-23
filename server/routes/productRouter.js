@@ -104,10 +104,18 @@ const getProductData = (body, file, existing = {}) => {
     return data;
 };
 
+let isInitialCheckDone = false;
+
 Router.get('/show', async (req, res) => {
     try {
-        await ensureCategoryProducts();
-        await ensureUniqueProductPrices();
+        if (!isInitialCheckDone) {
+            const count = await Product.countDocuments();
+            if (count === 0) {
+                await ensureCategoryProducts();
+                await ensureUniqueProductPrices();
+            }
+            isInitialCheckDone = true;
+        }
         const data = (await Product.find({}).sort({ createdAt: -1 })).map((product) => {
             const item = product.toObject();
             if (item.brand === 'SIPL') item.brand = '';
